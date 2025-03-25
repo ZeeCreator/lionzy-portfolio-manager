@@ -25,7 +25,7 @@ const Index = () => {
       <section 
         className="relative h-screen flex items-center justify-center overflow-hidden" 
         style={{
-          backgroundImage: `url(/src/assets/mountains/${settings.backgroundImage})`,
+          backgroundImage: `url(${settings.backgroundImage})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
         }}
