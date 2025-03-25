@@ -23,7 +23,7 @@ export default defineConfig(({ mode }) => ({
   build: {
     outDir: 'dist',
     sourcemap: true,
-    minify: 'terser',
+    minify: 'swc',
     terserOptions: {
       compress: {
         drop_console: true,
