@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { getProjects } from "@/utils/projectService";
 import { Project } from "@/types";
-import ProjectCard from "@/components/ui/ProjectCard";
+import { ProjectCard } from "@/components/ui/ProjectCard";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { PlusCircle } from "lucide-react";

@@ -88,3 +88,6 @@ export function ProjectCard({ project }: ProjectCardProps) {
     </div>
   );
 }
+
+// Add default export for backward compatibility
+export default ProjectCard;
