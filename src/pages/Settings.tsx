@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { saveSettings, getSettings } from "@/utils/settingsService";
+import { updateSettings, getSettings } from "@/utils/settingsService";
 import { SiteSettings } from "@/types";
 import { toast } from "@/components/ui/sonner";
 import { Label } from "@/components/ui/label";
@@ -55,7 +55,7 @@ const Settings = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    saveSettings(settings);
+    updateSettings(settings);
     toast.success("Settings saved successfully!");
   };
 
