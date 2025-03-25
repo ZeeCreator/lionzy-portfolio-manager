@@ -23,15 +23,31 @@ export default defineConfig(({ mode }) => ({
   build: {
     outDir: 'dist',
     sourcemap: true,
-    // Ensure the build output works well with Vercel
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+      },
+    },
+    // Optimize chunks for Vercel deployment
     rollupOptions: {
       output: {
         manualChunks: {
           react: ['react', 'react-dom'],
           router: ['react-router-dom'],
-          ui: ['@/components/ui']
+          ui: ['@/components/ui'],
+          vendor: [
+            '@radix-ui/react-toast',
+            '@tanstack/react-query',
+            'lucide-react',
+            'class-variance-authority',
+            'clsx',
+            'tailwind-merge'
+          ]
         }
       }
     }
-  }
+  },
+  // Add base configuration to handle Vercel's environment properly
+  base: '/',
 }));
