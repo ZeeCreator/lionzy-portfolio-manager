@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Github, Twitter, Linkedin, Instagram, Mail, Edit } from "lucide-react";
 import { getSettings } from "@/utils/settingsService";
+import { createContactMessage } from "@/utils/contactService";
 import { SiteSettings } from "@/types";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -40,9 +41,14 @@ const Contact = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real application, you'd send this data to a server
-    console.log("Form submitted:", formData);
+    
+    // Save the message
+    createContactMessage(formData);
+    
+    // Show success message
     toast.success("Message sent successfully!");
+    
+    // Reset form
     setFormData({
       name: "",
       email: "",

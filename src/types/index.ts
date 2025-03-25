@@ -29,3 +29,21 @@ export interface SiteSettings {
     url: string;
   };
 }
+
+export interface Skill {
+  id: string;
+  name: string;
+  level: number;
+  category: string;
+  icon: string;
+}
+
+export interface ContactMessage {
+  id: string;
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  createdAt: string;
+  read: boolean;
+}
