@@ -3,7 +3,7 @@
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ],
-  "buildCommand": "prepare && run-build",
+  "buildCommand": "vite build",
   "outputDirectory": "dist",
   "framework": "vite",
   "headers": [
