@@ -14,14 +14,16 @@ import ProjectDetail from "./pages/ProjectDetail";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Settings from "./pages/Settings";
+import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 
 // Admin Pages
 import Login from "./pages/Admin/Login";
-import Dashboard from "./pages/Admin/Dashboard";
+import AdminDashboard from "./pages/Admin/Dashboard";
 import AdminProjects from "./pages/Admin/Projects";
 import Skills from "./pages/Admin/Skills";
 import Messages from "./pages/Admin/Messages";
+import { UserProvider } from "./contexts/UserContext";
 
 const queryClient = new QueryClient();
 
@@ -30,113 +32,131 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
-        <Routes>
-          {/* Public Routes */}
-          <Route
-            path="/"
-            element={
-              <div className="flex flex-col min-h-screen">
-                <Header />
-                <main className="flex-grow pt-16">
-                  <Index />
-                </main>
-                <Footer />
-              </div>
-            }
-          />
-          <Route
-            path="/projects"
-            element={
-              <div className="flex flex-col min-h-screen">
-                <Header />
-                <main className="flex-grow pt-16">
-                  <Projects />
-                </main>
-                <Footer />
-              </div>
-            }
-          />
-          <Route
-            path="/projects/:id"
-            element={
-              <div className="flex flex-col min-h-screen">
-                <Header />
-                <main className="flex-grow pt-16">
-                  <ProjectDetail />
-                </main>
-                <Footer />
-              </div>
-            }
-          />
-          <Route
-            path="/about"
-            element={
-              <div className="flex flex-col min-h-screen">
-                <Header />
-                <main className="flex-grow pt-16">
-                  <About />
-                </main>
-                <Footer />
-              </div>
-            }
-          />
-          <Route
-            path="/contact"
-            element={
-              <div className="flex flex-col min-h-screen">
-                <Header />
-                <main className="flex-grow pt-16">
-                  <Contact />
-                </main>
-                <Footer />
-              </div>
-            }
-          />
-          <Route
-            path="/settings"
-            element={
-              <div className="flex flex-col min-h-screen">
-                <Header />
-                <main className="flex-grow pt-16">
-                  <Settings />
-                </main>
-                <Footer />
-              </div>
-            }
-          />
+      <UserProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* Public Routes */}
+            <Route
+              path="/"
+              element={
+                <div className="flex flex-col min-h-screen">
+                  <Header />
+                  <main className="flex-grow pt-16">
+                    <Index />
+                  </main>
+                  <Footer />
+                </div>
+              }
+            />
+            <Route
+              path="/projects"
+              element={
+                <div className="flex flex-col min-h-screen">
+                  <Header />
+                  <main className="flex-grow pt-16">
+                    <Projects />
+                  </main>
+                  <Footer />
+                </div>
+              }
+            />
+            <Route
+              path="/projects/:id"
+              element={
+                <div className="flex flex-col min-h-screen">
+                  <Header />
+                  <main className="flex-grow pt-16">
+                    <ProjectDetail />
+                  </main>
+                  <Footer />
+                </div>
+              }
+            />
+            <Route
+              path="/about"
+              element={
+                <div className="flex flex-col min-h-screen">
+                  <Header />
+                  <main className="flex-grow pt-16">
+                    <About />
+                  </main>
+                  <Footer />
+                </div>
+              }
+            />
+            <Route
+              path="/contact"
+              element={
+                <div className="flex flex-col min-h-screen">
+                  <Header />
+                  <main className="flex-grow pt-16">
+                    <Contact />
+                  </main>
+                  <Footer />
+                </div>
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                <ProtectedRoute>
+                  <div className="flex flex-col min-h-screen">
+                    <Header />
+                    <main className="flex-grow pt-16">
+                      <Settings />
+                    </main>
+                    <Footer />
+                  </div>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <div className="flex flex-col min-h-screen">
+                    <Header />
+                    <main className="flex-grow pt-16">
+                      <Dashboard />
+                    </main>
+                    <Footer />
+                  </div>
+                </ProtectedRoute>
+              }
+            />
 
-          {/* Admin Routes */}
-          <Route path="/admin/login" element={<Login />} />
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          >
-            <Route index element={<AdminProjects />} />
-            <Route path="projects" element={<AdminProjects />} />
-            <Route path="skills" element={<Skills />} />
-            <Route path="messages" element={<Messages />} />
-          </Route>
+            {/* Admin Routes */}
+            <Route path="/admin/login" element={<Login />} />
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<AdminProjects />} />
+              <Route path="projects" element={<AdminProjects />} />
+              <Route path="skills" element={<Skills />} />
+              <Route path="messages" element={<Messages />} />
+            </Route>
 
-          {/* 404 Route */}
-          <Route
-            path="*"
-            element={
-              <div className="flex flex-col min-h-screen">
-                <Header />
-                <main className="flex-grow pt-16">
-                  <NotFound />
-                </main>
-                <Footer />
-              </div>
-            }
-          />
-        </Routes>
-      </BrowserRouter>
+            {/* 404 Route */}
+            <Route
+              path="*"
+              element={
+                <div className="flex flex-col min-h-screen">
+                  <Header />
+                  <main className="flex-grow pt-16">
+                    <NotFound />
+                  </main>
+                  <Footer />
+                </div>
+              }
+            />
+          </Routes>
+        </BrowserRouter>
+      </UserProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

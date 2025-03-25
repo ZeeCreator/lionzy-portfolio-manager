@@ -1,165 +1,120 @@
 
-import { useEffect, useState } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Github, ExternalLink, Calendar, Clock } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useParams, Link } from "react-router-dom";
+import { ArrowLeft, Github, ExternalLink, Edit } from "lucide-react";
 import { getProjectById } from "@/utils/projectService";
 import { Project } from "@/types";
-import { toast } from "@/components/ui/sonner";
+import { Button } from "@/components/ui/button";
+import { useUser } from "@/contexts/UserContext";
 
 const ProjectDetail = () => {
   const { id } = useParams<{ id: string }>();
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
+  const { isLoggedIn } = useUser();
 
   useEffect(() => {
     if (id) {
+      // Load project
       const projectData = getProjectById(id);
       if (projectData) {
         setProject(projectData);
-      } else {
-        toast.error("Project not found");
-        navigate("/projects");
       }
+      setLoading(false);
     }
-    setLoading(false);
-  }, [id, navigate]);
+  }, [id]);
 
   if (loading) {
     return (
-      <div className="container py-20 px-6 animate-pulse">
-        <div className="h-8 w-32 bg-secondary rounded mb-4"></div>
-        <div className="h-12 w-96 bg-secondary rounded mb-8"></div>
-        <div className="aspect-video w-full bg-secondary rounded-lg mb-8"></div>
+      <div className="container mx-auto py-12 px-4">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="mt-2 text-muted-foreground">Loading project...</p>
+        </div>
       </div>
     );
   }
 
   if (!project) {
     return (
-      <div className="container py-20 px-6 text-center">
-        <h1 className="text-2xl font-bold mb-4">Project not found</h1>
-        <Link to="/projects" className="btn-primary">
-          Back to Projects
-        </Link>
+      <div className="container mx-auto py-12 px-4">
+        <div className="text-center py-12">
+          <h2 className="text-2xl font-bold mb-2">Project Not Found</h2>
+          <p className="text-muted-foreground mb-6">
+            The project you're looking for doesn't exist or has been removed.
+          </p>
+          <Button asChild>
+            <Link to="/projects">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Projects
+            </Link>
+          </Button>
+        </div>
       </div>
     );
   }
 
-  // Format dates
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return new Intl.DateTimeFormat('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    }).format(date);
-  };
-
   return (
-    <div className="min-h-screen pb-20">
-      <div className="h-[50vh] relative overflow-hidden">
-        <div className="absolute inset-0 bg-black/40 z-10"></div>
-        <img 
-          src={project.imageUrl} 
-          alt={project.title} 
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute top-0 left-0 right-0 z-20">
-          <div className="container py-8 px-6 md:px-12">
-            <Link to="/projects" className="inline-flex items-center text-white hover:text-white/80 transition-colors">
-              <ArrowLeft size={18} className="mr-2" />
-              Back to Projects
+    <div className="container mx-auto py-12 px-4">
+      <div className="mb-8 flex justify-between items-center">
+        <Link 
+          to="/projects" 
+          className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4 mr-1" />
+          Back to Projects
+        </Link>
+        
+        {isLoggedIn && (
+          <Button asChild variant="outline" size="sm">
+            <Link to="/admin/projects">
+              <Edit className="h-4 w-4 mr-1" />
+              Edit Project
             </Link>
-          </div>
-        </div>
-        <div className="absolute bottom-0 left-0 right-0 z-20">
-          <div className="container py-8 px-6 md:px-12">
-            <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">{project.title}</h1>
-            {project.featured && (
-              <span className="chip bg-primary/90 text-white">Featured</span>
-            )}
-          </div>
-        </div>
+          </Button>
+        )}
       </div>
       
-      <div className="container px-6 md:px-12 -mt-6 relative z-20">
-        <div className="glass-card rounded-xl p-8 shadow-lg">
-          <div className="flex flex-wrap gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+        <div>
+          <img 
+            src={project.imageUrl} 
+            alt={project.title} 
+            className="w-full h-auto rounded-lg shadow-md object-cover aspect-video"
+          />
+        </div>
+        <div>
+          <h1 className="text-3xl font-bold mb-2">{project.title}</h1>
+          <div className="flex flex-wrap gap-2 mb-4">
             {project.tags.map((tag) => (
               <span 
                 key={tag} 
-                className="text-sm px-3 py-1 bg-secondary text-secondary-foreground rounded-full"
+                className="px-2 py-1 bg-secondary text-secondary-foreground rounded-md text-xs"
               >
                 {tag}
               </span>
             ))}
           </div>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2">
-              <h2 className="text-xl font-medium mb-4">About the Project</h2>
-              <p className="text-muted-foreground whitespace-pre-line">
-                {project.description}
-              </p>
-            </div>
-            
-            <div className="lg:col-span-1">
-              <div className="glass-card rounded-lg p-6">
-                <h3 className="font-medium mb-4">Project Information</h3>
-                
-                <div className="space-y-4">
-                  <div className="flex items-start">
-                    <Calendar size={18} className="mt-0.5 mr-3 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">Created on</p>
-                      <p className="font-medium">{formatDate(project.createdAt)}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-start">
-                    <Clock size={18} className="mt-0.5 mr-3 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">Last updated</p>
-                      <p className="font-medium">{formatDate(project.updatedAt)}</p>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="flex flex-col gap-3 mt-8">
-                  {project.githubUrl && (
-                    <a 
-                      href={project.githubUrl} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="btn-outline flex items-center justify-center"
-                    >
-                      <Github size={18} className="mr-2" />
-                      View Repository
-                    </a>
-                  )}
-                  
-                  {project.liveUrl && (
-                    <a 
-                      href={project.liveUrl} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="btn-primary flex items-center justify-center"
-                    >
-                      <ExternalLink size={18} className="mr-2" />
-                      Visit Live Site
-                    </a>
-                  )}
-                  
-                  <Link 
-                    to="/settings" 
-                    className="btn-secondary flex items-center justify-center mt-4"
-                  >
-                    Edit Project
-                  </Link>
-                </div>
-              </div>
-            </div>
+          <p className="text-muted-foreground mb-6">
+            {project.description}
+          </p>
+          <div className="flex flex-wrap gap-3">
+            {project.githubUrl && (
+              <Button asChild variant="outline">
+                <a href={project.githubUrl} target="_blank" rel="noopener noreferrer">
+                  <Github className="h-4 w-4 mr-2" />
+                  View Code
+                </a>
+              </Button>
+            )}
+            {project.liveUrl && (
+              <Button asChild>
+                <a href={project.liveUrl} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Live Demo
+                </a>
+              </Button>
+            )}
           </div>
         </div>
       </div>

@@ -1,14 +1,16 @@
 
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { Github, Twitter, Linkedin, Instagram, Mail, Edit } from "lucide-react";
+import { useState, useEffect } from "react";
 import { getSettings } from "@/utils/settingsService";
-import { createContactMessage } from "@/utils/contactService";
 import { SiteSettings } from "@/types";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
+import { Edit, MessageSquare, Send } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/sonner";
+import { sendMessage } from "@/utils/contactService";
+import { useUser } from "@/contexts/UserContext";
 
 const Contact = () => {
   const [settings, setSettings] = useState<SiteSettings | null>(null);
@@ -18,19 +20,13 @@ const Contact = () => {
     subject: "",
     message: "",
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { isLoggedIn } = useUser();
 
   useEffect(() => {
+    // Load settings
     setSettings(getSettings());
   }, []);
-
-  if (!settings) return null;
-
-  const socialLinks = [
-    { name: "GitHub", icon: Github, url: settings.social.github },
-    { name: "Twitter", icon: Twitter, url: settings.social.twitter },
-    { name: "LinkedIn", icon: Linkedin, url: settings.social.linkedin },
-    { name: "Instagram", icon: Instagram, url: settings.social.instagram },
-  ].filter((link) => link.url);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -41,161 +37,154 @@ const Contact = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Save the message
-    createContactMessage(formData);
-    
-    // Show success message
-    toast.success("Message sent successfully!");
-    
-    // Reset form
-    setFormData({
-      name: "",
-      email: "",
-      subject: "",
-      message: "",
-    });
+    setIsSubmitting(true);
+
+    try {
+      sendMessage({
+        ...formData,
+        id: Math.random().toString(36).substr(2, 9),
+        createdAt: new Date().toISOString(),
+        read: false,
+      });
+
+      toast.success("Message sent successfully!");
+      setFormData({
+        name: "",
+        email: "",
+        subject: "",
+        message: "",
+      });
+    } catch (error) {
+      toast.error("Failed to send message. Please try again.");
+      console.error(error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  return (
-    <div className="min-h-screen">
-      <section className="py-20 px-6 md:px-12 bg-secondary/50">
-        <div className="container">
-          <div className="flex justify-between items-end">
-            <div>
-              <span className="chip mb-3">Contact</span>
-              <h1 className="text-4xl font-bold">Get in Touch</h1>
-            </div>
-            <Link to="/settings" className="btn-outline">
-              <Edit size={16} className="mr-2" />
-              Edit
-            </Link>
-          </div>
+  if (!settings) {
+    return (
+      <div className="container mx-auto py-12 px-4">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="mt-2 text-muted-foreground">Loading contact page...</p>
         </div>
-      </section>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto py-12 px-4">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">Contact Me</h1>
+        
+        {isLoggedIn && (
+          <div className="space-x-3">
+            <Button asChild variant="outline" size="sm">
+              <Link to="/admin/messages">
+                <MessageSquare className="h-4 w-4 mr-1" />
+                View Messages
+              </Link>
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <Link to="/settings">
+                <Edit className="h-4 w-4 mr-1" />
+                Edit Settings
+              </Link>
+            </Button>
+          </div>
+        )}
+      </div>
       
-      <section className="py-16 px-6 md:px-12">
-        <div className="container">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2">
-              <div className="glass-card rounded-xl p-8">
-                <h2 className="text-2xl font-medium mb-6">Send a Message</h2>
-                
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="name">Your Name</Label>
-                      <Input
-                        id="name"
-                        name="name"
-                        placeholder="John Doe"
-                        value={formData.name}
-                        onChange={handleChange}
-                        required
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email Address</Label>
-                      <Input
-                        id="email"
-                        name="email"
-                        type="email"
-                        placeholder="john@example.com"
-                        value={formData.email}
-                        onChange={handleChange}
-                        required
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="subject">Subject</Label>
-                    <Input
-                      id="subject"
-                      name="subject"
-                      placeholder="Project Inquiry"
-                      value={formData.subject}
-                      onChange={handleChange}
-                      required
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="message">Message</Label>
-                    <Textarea
-                      id="message"
-                      name="message"
-                      placeholder="Write your message here..."
-                      rows={6}
-                      value={formData.message}
-                      onChange={handleChange}
-                      required
-                    />
-                  </div>
-                  
-                  <button type="submit" className="btn-primary w-full md:w-auto px-8">
-                    Send Message
-                  </button>
-                </form>
-              </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+        <div>
+          <p className="text-lg mb-6">
+            Have a question or want to work together? Feel free to reach out!
+          </p>
+          
+          <div className="mb-6">
+            <h2 className="text-xl font-semibold mb-2">Contact Information</h2>
+            <p className="text-muted-foreground">
+              Email: <a href={`mailto:${settings.contactEmail}`} className="text-primary hover:underline">{settings.contactEmail}</a>
+            </p>
+          </div>
+          
+          {settings.saweria?.username && (
+            <div className="mb-6">
+              <h2 className="text-xl font-semibold mb-2">Support My Work</h2>
+              <p className="text-muted-foreground mb-3">
+                If you find my work valuable, you can support me via Saweria.
+              </p>
+              <Button asChild variant="outline">
+                <a 
+                  href={settings.saweria.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Support via Saweria
+                </a>
+              </Button>
+            </div>
+          )}
+        </div>
+        
+        <div className="glass-card rounded-xl p-6 md:p-8">
+          <h2 className="text-xl font-semibold mb-6">Send Me a Message</h2>
+          
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Name</Label>
+              <Input
+                id="name"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                required
+              />
             </div>
             
-            <div className="lg:col-span-1">
-              <div className="glass-card rounded-xl p-8 sticky top-24">
-                <h3 className="text-xl font-medium mb-6">Contact Information</h3>
-                
-                <div className="space-y-6">
-                  <div className="flex items-start">
-                    <Mail size={20} className="mt-1 mr-4 text-primary" />
-                    <div>
-                      <p className="font-medium">Email</p>
-                      <a 
-                        href={`mailto:${settings.contactEmail}`}
-                        className="text-muted-foreground hover:text-primary transition-colors"
-                      >
-                        {settings.contactEmail}
-                      </a>
-                    </div>
-                  </div>
-                </div>
-                
-                {socialLinks.length > 0 && (
-                  <div className="mt-8">
-                    <h4 className="font-medium mb-4">Social Media</h4>
-                    <div className="flex flex-wrap gap-4">
-                      {socialLinks.map((link) => (
-                        <a 
-                          key={link.name}
-                          href={link.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="glass-card rounded-full p-3 text-muted-foreground hover:text-primary transition-colors"
-                          aria-label={link.name}
-                        >
-                          <link.icon size={20} />
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                
-                <div className="mt-8">
-                  <h4 className="font-medium mb-4">Support My Work</h4>
-                  <a 
-                    href={settings.saweria.url} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
-                    className="btn-outline w-full flex items-center justify-center"
-                  >
-                    Donate via Saweria
-                  </a>
-                </div>
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
+                required
+              />
             </div>
-          </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="subject">Subject</Label>
+              <Input
+                id="subject"
+                name="subject"
+                value={formData.subject}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="message">Message</Label>
+              <Textarea
+                id="message"
+                name="message"
+                rows={5}
+                value={formData.message}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            
+            <Button type="submit" disabled={isSubmitting}>
+              <Send className="h-4 w-4 mr-2" />
+              {isSubmitting ? "Sending..." : "Send Message"}
+            </Button>
+          </form>
         </div>
-      </section>
+      </div>
     </div>
   );
 };

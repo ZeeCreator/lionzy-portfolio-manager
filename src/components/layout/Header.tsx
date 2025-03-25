@@ -1,15 +1,19 @@
 
 import { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { Menu, X } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Menu, X, LogIn, LogOut } from "lucide-react";
 import { getSettings } from "@/utils/settingsService";
 import { SiteSettings } from "@/types";
+import { useUser } from "@/contexts/UserContext";
+import { Button } from "@/components/ui/button";
 
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const [settings, setSettings] = useState<SiteSettings | null>(null);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { isLoggedIn, logoutUser } = useUser();
 
   useEffect(() => {
     setSettings(getSettings());
@@ -26,6 +30,15 @@ export default function Header() {
     // Close mobile menu when route changes
     setIsOpen(false);
   }, [location.pathname]);
+  
+  const handleLogin = () => {
+    navigate("/admin/login");
+  };
+
+  const handleLogout = () => {
+    logoutUser();
+    navigate("/");
+  };
 
   if (!settings) return null;
 
@@ -51,22 +64,57 @@ export default function Header() {
             {settings.siteName}
           </Link>
           
-          <nav className="hidden md:block">
-            <ul className="flex space-x-8">
-              {navLinks.map((link) => (
-                <li key={link.name}>
-                  <Link
-                    to={link.href}
-                    className={`subtle-underline text-sm font-medium ${
-                      location.pathname === link.href ? "text-primary" : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    {link.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
+          <div className="flex items-center space-x-4">
+            <nav className="hidden md:block">
+              <ul className="flex space-x-8">
+                {navLinks.map((link) => (
+                  <li key={link.name}>
+                    <Link
+                      to={link.href}
+                      className={`subtle-underline text-sm font-medium ${
+                        location.pathname === link.href ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {link.name}
+                    </Link>
+                  </li>
+                ))}
+                
+                {isLoggedIn && (
+                  <li>
+                    <Link
+                      to="/dashboard"
+                      className="subtle-underline text-sm font-medium text-muted-foreground hover:text-foreground"
+                    >
+                      Dashboard
+                    </Link>
+                  </li>
+                )}
+              </ul>
+            </nav>
+
+            {isLoggedIn ? (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="hidden md:flex items-center" 
+                onClick={handleLogout}
+              >
+                <LogOut className="h-4 w-4 mr-1" />
+                Logout
+              </Button>
+            ) : (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="hidden md:flex items-center" 
+                onClick={handleLogin}
+              >
+                <LogIn className="h-4 w-4 mr-1" />
+                Login
+              </Button>
+            )}
+          </div>
           
           <div className="md:hidden">
             <button
@@ -98,14 +146,39 @@ export default function Header() {
                   </Link>
                 </li>
               ))}
+              
+              {isLoggedIn && (
+                <li>
+                  <Link
+                    to="/dashboard"
+                    className="block text-lg py-2 text-muted-foreground"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Dashboard
+                  </Link>
+                </li>
+              )}
+              
               <li className="pt-4 border-t border-border">
-                <Link
-                  to="/settings"
-                  className="block text-lg py-2 text-muted-foreground"
-                  onClick={() => setIsOpen(false)}
-                >
-                  Settings
-                </Link>
+                {isLoggedIn ? (
+                  <button
+                    onClick={() => {
+                      handleLogout();
+                      setIsOpen(false);
+                    }}
+                    className="block w-full text-left text-lg py-2 text-muted-foreground"
+                  >
+                    Logout
+                  </button>
+                ) : (
+                  <Link
+                    to="/admin/login"
+                    className="block text-lg py-2 text-muted-foreground"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Login
+                  </Link>
+                )}
               </li>
             </ul>
           </nav>

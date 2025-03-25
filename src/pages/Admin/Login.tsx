@@ -5,9 +5,11 @@ import { toast } from "@/components/ui/sonner";
 import { login } from "@/utils/authService";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { useUser } from "@/contexts/UserContext";
 
 const Login = () => {
   const navigate = useNavigate();
+  const { login: loginContext } = useUser();
   const [credentials, setCredentials] = useState({
     username: "",
     password: "",
@@ -23,7 +25,8 @@ const Login = () => {
     
     if (login(credentials.username, credentials.password)) {
       toast.success("Login successful!");
-      navigate("/admin/dashboard");
+      loginContext(); // Update context
+      navigate("/dashboard");
     } else {
       toast.error("Invalid credentials. Please try again.");
     }
