@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/sonner";
-import { sendMessage } from "@/utils/contactService";
+import { createContactMessage } from "@/utils/contactService";
 import { useUser } from "@/contexts/UserContext";
 
 const Contact = () => {
@@ -40,11 +40,11 @@ const Contact = () => {
     setIsSubmitting(true);
 
     try {
-      sendMessage({
-        ...formData,
-        id: Math.random().toString(36).substr(2, 9),
-        createdAt: new Date().toISOString(),
-        read: false,
+      createContactMessage({
+        name: formData.name,
+        email: formData.email,
+        subject: formData.subject,
+        message: formData.message
       });
 
       toast.success("Message sent successfully!");
