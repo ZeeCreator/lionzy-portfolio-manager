@@ -15,6 +15,8 @@ import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Settings from "./pages/Settings";
 import Dashboard from "./pages/Dashboard";
+import FileManager from "./pages/FileManager";
+import ShortLinks from "./pages/ShortLinks";
 import NotFound from "./pages/NotFound";
 
 // Admin Pages
@@ -91,6 +93,30 @@ const App = () => (
                   <Header />
                   <main className="flex-grow pt-16">
                     <Contact />
+                  </main>
+                  <Footer />
+                </div>
+              }
+            />
+            <Route
+              path="/files"
+              element={
+                <div className="flex flex-col min-h-screen">
+                  <Header />
+                  <main className="flex-grow pt-16">
+                    <FileManager />
+                  </main>
+                  <Footer />
+                </div>
+              }
+            />
+            <Route
+              path="/shortlinks"
+              element={
+                <div className="flex flex-col min-h-screen">
+                  <Header />
+                  <main className="flex-grow pt-16">
+                    <ShortLinks />
                   </main>
                   <Footer />
                 </div>

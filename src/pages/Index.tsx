@@ -6,6 +6,8 @@ import { getProjects } from "@/utils/projectService";
 import { getSettings } from "@/utils/settingsService";
 import { Project, SiteSettings } from "@/types";
 import { ProjectCard } from "@/components/ui/ProjectCard";
+import { TypingAnimation } from "@/components/ui/TypingAnimation";
+import { EducationRoadmap } from "@/components/EducationRoadmap";
 
 const Index = () => {
   const [featuredProjects, setFeaturedProjects] = useState<Project[]>([]);
@@ -35,10 +37,18 @@ const Index = () => {
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-6 animate-fade-in text-balance">
             {settings.siteName}
           </h1>
-          <p className="text-xl md:text-2xl text-white/90 max-w-2xl mx-auto mb-8 animate-slide-in-bottom text-balance">
+          <div className="text-xl md:text-2xl text-white/90 max-w-2xl mx-auto mb-4 animate-slide-in-bottom">
+            <span>Hi, I'm </span>
+            <TypingAnimation 
+              text={settings.ownerName} 
+              speed={150}
+              className="text-primary font-semibold"
+            />
+          </div>
+          <p className="text-lg md:text-xl text-white/80 max-w-2xl mx-auto mb-8 animate-slide-in-bottom text-balance" style={{ animationDelay: "500ms" }}>
             Creating beautiful digital experiences with attention to detail and pixel-perfect design.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center animate-slide-in-bottom" style={{ animationDelay: "200ms" }}>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center animate-slide-in-bottom" style={{ animationDelay: "700ms" }}>
             <Link to="/projects" className="btn-primary px-8 py-3">
               View Projects
             </Link>
@@ -85,6 +95,21 @@ const Index = () => {
           )}
         </div>
       </section>
+
+      {/* Education Roadmap Section */}
+      {settings.showEducationRoadmap && settings.educationItems && settings.educationItems.length > 0 && (
+        <section className="section bg-secondary/30">
+          <div className="container">
+            <div className="mb-10">
+              <span className="chip mb-3">Learning Journey</span>
+              <h2 className="text-3xl font-bold">Education Roadmap</h2>
+              <p className="text-muted-foreground mt-2">My learning progress and achievements</p>
+            </div>
+            
+            <EducationRoadmap items={settings.educationItems} showProgress={true} />
+          </div>
+        </section>
+      )}
 
       {/* About Section Preview */}
       <section className="section bg-secondary/50">

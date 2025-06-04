@@ -1,7 +1,42 @@
 
-import { SiteSettings } from "@/types";
+import { SiteSettings, EducationItem } from "@/types";
 
 const STORAGE_KEY = "lionzy_settings";
+
+const defaultEducationItems: EducationItem[] = [
+  {
+    id: "1",
+    title: "HTML & CSS Fundamentals",
+    description: "Learn the basics of web development with HTML and CSS",
+    progress: 100,
+    category: "Frontend Development",
+    completed: true
+  },
+  {
+    id: "2",
+    title: "JavaScript ES6+",
+    description: "Modern JavaScript features and best practices",
+    progress: 85,
+    category: "Frontend Development",
+    completed: false
+  },
+  {
+    id: "3",
+    title: "React.js Framework",
+    description: "Building interactive user interfaces with React",
+    progress: 70,
+    category: "Frontend Development",
+    completed: false
+  },
+  {
+    id: "4",
+    title: "Node.js Backend",
+    description: "Server-side JavaScript development",
+    progress: 45,
+    category: "Backend Development",
+    completed: false
+  }
+];
 
 const defaultSettings: SiteSettings = {
   siteName: "Lionzy Portfolio",
@@ -19,6 +54,8 @@ const defaultSettings: SiteSettings = {
     username: "lionzy",
     url: "https://saweria.co/lionzy",
   },
+  showEducationRoadmap: true,
+  educationItems: defaultEducationItems,
 };
 
 // Mountain background images
@@ -40,7 +77,14 @@ export const getSettings = (): SiteSettings => {
     return defaultSettings;
   }
   
-  return JSON.parse(storedSettings);
+  const settings = JSON.parse(storedSettings);
+  // Ensure education items exist
+  if (!settings.educationItems) {
+    settings.educationItems = defaultEducationItems;
+    settings.showEducationRoadmap = true;
+  }
+  
+  return settings;
 };
 
 // Update settings

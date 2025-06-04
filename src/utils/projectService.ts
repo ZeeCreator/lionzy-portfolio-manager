@@ -1,4 +1,3 @@
-
 import { Project } from "@/types";
 
 const STORAGE_KEY = "lionzy_projects";
@@ -16,6 +15,9 @@ const initialProjects: Project[] = [
     githubUrl: "https://github.com/",
     liveUrl: "https://example.com",
     featured: true,
+    downloadType: 'free',
+    downloadUrl: "https://github.com/user/repo/archive/main.zip",
+    sourceVisible: true,
   },
   {
     id: "2",
@@ -27,6 +29,9 @@ const initialProjects: Project[] = [
     updatedAt: new Date().toISOString(),
     githubUrl: "https://github.com/",
     featured: false,
+    downloadType: 'paid',
+    price: 29.99,
+    sourceVisible: false,
   },
   {
     id: "3",
@@ -39,6 +44,9 @@ const initialProjects: Project[] = [
     githubUrl: "https://github.com/",
     liveUrl: "https://example.com",
     featured: true,
+    downloadType: 'free',
+    downloadUrl: "https://github.com/user/weather-app/archive/main.zip",
+    sourceVisible: true,
   },
 ];
 
@@ -52,7 +60,13 @@ export const getProjects = (): Project[] => {
     return initialProjects;
   }
   
-  return JSON.parse(storedProjects);
+  const projects = JSON.parse(storedProjects);
+  // Ensure new fields exist in existing projects
+  return projects.map((project: any) => ({
+    ...project,
+    downloadType: project.downloadType || 'free',
+    sourceVisible: project.sourceVisible !== undefined ? project.sourceVisible : true,
+  }));
 };
 
 // Get a single project by ID
@@ -69,6 +83,8 @@ export const createProject = (project: Omit<Project, "id" | "createdAt" | "updat
     id: Date.now().toString(),
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
+    downloadType: project.downloadType || 'free',
+    sourceVisible: project.sourceVisible !== undefined ? project.sourceVisible : true,
   };
   
   const updatedProjects = [...projects, newProject];

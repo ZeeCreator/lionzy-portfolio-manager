@@ -10,6 +10,11 @@ export interface Project {
   githubUrl?: string;
   liveUrl?: string;
   featured: boolean;
+  // New download features
+  downloadType: 'free' | 'paid';
+  downloadUrl?: string;
+  price?: number;
+  sourceVisible: boolean;
 }
 
 export interface SiteSettings {
@@ -28,6 +33,9 @@ export interface SiteSettings {
     username: string;
     url: string;
   };
+  // New education roadmap settings
+  showEducationRoadmap: boolean;
+  educationItems: EducationItem[];
 }
 
 export interface Skill {
@@ -46,4 +54,34 @@ export interface ContactMessage {
   message: string;
   createdAt: string;
   read: boolean;
+}
+
+// New types for additional features
+export interface EducationItem {
+  id: string;
+  title: string;
+  description: string;
+  progress: number;
+  category: string;
+  completed: boolean;
+}
+
+export interface FileItem {
+  id: string;
+  name: string;
+  size: number;
+  type: string;
+  url: string;
+  uploadedAt: string;
+  downloadCount: number;
+}
+
+export interface ShortLink {
+  id: string;
+  originalUrl: string;
+  shortCode: string;
+  title: string;
+  clickCount: number;
+  createdAt: string;
+  active: boolean;
 }
