@@ -37,6 +37,10 @@ const Projects = () => {
     githubUrl: "",
     liveUrl: "",
     featured: false,
+    downloadType: 'free' as 'free' | 'paid',
+    downloadUrl: "",
+    price: 0,
+    sourceVisible: true,
   });
 
   useEffect(() => {
@@ -57,11 +61,15 @@ const Projects = () => {
       githubUrl: "",
       liveUrl: "",
       featured: false,
+      downloadType: 'free',
+      downloadUrl: "",
+      price: 0,
+      sourceVisible: true,
     });
   };
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value, type } = e.target as HTMLInputElement;
     
@@ -70,6 +78,8 @@ const Projects = () => {
         ...prev,
         [name]: (e.target as HTMLInputElement).checked,
       }));
+    } else if (name === "price") {
+      setFormData((prev) => ({ ...prev, [name]: parseFloat(value) || 0 }));
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
@@ -86,6 +96,10 @@ const Projects = () => {
       githubUrl: formData.githubUrl || undefined,
       liveUrl: formData.liveUrl || undefined,
       featured: formData.featured,
+      downloadType: formData.downloadType,
+      downloadUrl: formData.downloadUrl || undefined,
+      price: formData.downloadType === 'paid' ? formData.price : undefined,
+      sourceVisible: formData.sourceVisible,
     });
     
     setProjects((prev) => [...prev, newProject]);
@@ -107,6 +121,10 @@ const Projects = () => {
       githubUrl: formData.githubUrl || undefined,
       liveUrl: formData.liveUrl || undefined,
       featured: formData.featured,
+      downloadType: formData.downloadType,
+      downloadUrl: formData.downloadUrl || undefined,
+      price: formData.downloadType === 'paid' ? formData.price : undefined,
+      sourceVisible: formData.sourceVisible,
     });
     
     if (updatedProject) {
@@ -144,6 +162,10 @@ const Projects = () => {
       githubUrl: project.githubUrl || "",
       liveUrl: project.liveUrl || "",
       featured: project.featured,
+      downloadType: project.downloadType,
+      downloadUrl: project.downloadUrl || "",
+      price: project.price || 0,
+      sourceVisible: project.sourceVisible,
     });
     setIsEditDialogOpen(true);
   };
@@ -152,6 +174,149 @@ const Projects = () => {
     setSelectedProject(project);
     setIsDeleteDialogOpen(true);
   };
+
+  const ProjectForm = ({ isEdit = false }: { isEdit?: boolean }) => (
+    <div className="space-y-4 py-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor={isEdit ? "edit-title" : "title"}>Title</Label>
+          <Input
+            id={isEdit ? "edit-title" : "title"}
+            name="title"
+            value={formData.title}
+            onChange={handleChange}
+            required
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor={isEdit ? "edit-imageUrl" : "imageUrl"}>Image URL</Label>
+          <Input
+            id={isEdit ? "edit-imageUrl" : "imageUrl"}
+            name="imageUrl"
+            value={formData.imageUrl}
+            onChange={handleChange}
+            placeholder="/placeholder.svg"
+          />
+        </div>
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor={isEdit ? "edit-description" : "description"}>Description</Label>
+        <Textarea
+          id={isEdit ? "edit-description" : "description"}
+          name="description"
+          value={formData.description}
+          onChange={handleChange}
+          required
+          rows={3}
+        />
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor={isEdit ? "edit-tags" : "tags"}>Tags (comma separated)</Label>
+        <Input
+          id={isEdit ? "edit-tags" : "tags"}
+          name="tags"
+          value={formData.tags}
+          onChange={handleChange}
+          placeholder="React, TypeScript, Tailwind"
+          required
+        />
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor={isEdit ? "edit-githubUrl" : "githubUrl"}>GitHub URL</Label>
+          <Input
+            id={isEdit ? "edit-githubUrl" : "githubUrl"}
+            name="githubUrl"
+            value={formData.githubUrl}
+            onChange={handleChange}
+            placeholder="https://github.com/..."
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor={isEdit ? "edit-liveUrl" : "liveUrl"}>Live URL</Label>
+          <Input
+            id={isEdit ? "edit-liveUrl" : "liveUrl"}
+            name="liveUrl"
+            value={formData.liveUrl}
+            onChange={handleChange}
+            placeholder="https://..."
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor={isEdit ? "edit-downloadType" : "downloadType"}>Download Type</Label>
+        <select
+          id={isEdit ? "edit-downloadType" : "downloadType"}
+          name="downloadType"
+          value={formData.downloadType}
+          onChange={handleChange}
+          className="w-full px-3 py-2 border border-input bg-background rounded-md"
+        >
+          <option value="free">Free</option>
+          <option value="paid">Paid</option>
+        </select>
+      </div>
+
+      {formData.downloadType === 'free' && (
+        <div className="space-y-2">
+          <Label htmlFor={isEdit ? "edit-downloadUrl" : "downloadUrl"}>Download URL</Label>
+          <Input
+            id={isEdit ? "edit-downloadUrl" : "downloadUrl"}
+            name="downloadUrl"
+            value={formData.downloadUrl}
+            onChange={handleChange}
+            placeholder="https://github.com/user/repo/archive/main.zip"
+          />
+        </div>
+      )}
+
+      {formData.downloadType === 'paid' && (
+        <div className="space-y-2">
+          <Label htmlFor={isEdit ? "edit-price" : "price"}>Price ($)</Label>
+          <Input
+            id={isEdit ? "edit-price" : "price"}
+            name="price"
+            type="number"
+            step="0.01"
+            min="0"
+            value={formData.price}
+            onChange={handleChange}
+            placeholder="29.99"
+          />
+        </div>
+      )}
+      
+      <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2">
+          <input
+            id={isEdit ? "edit-featured" : "featured"}
+            name="featured"
+            type="checkbox"
+            checked={formData.featured}
+            onChange={handleChange}
+            className="rounded"
+          />
+          <Label htmlFor={isEdit ? "edit-featured" : "featured"}>Featured Project</Label>
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <input
+            id={isEdit ? "edit-sourceVisible" : "sourceVisible"}
+            name="sourceVisible"
+            type="checkbox"
+            checked={formData.sourceVisible}
+            onChange={handleChange}
+            className="rounded"
+          />
+          <Label htmlFor={isEdit ? "edit-sourceVisible" : "sourceVisible"}>Show Source Code</Label>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
@@ -174,16 +339,17 @@ const Projects = () => {
           <TableHeader>
             <TableRow>
               <TableHead>Title</TableHead>
-              <TableHead>Description</TableHead>
-              <TableHead>Tags</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead>Price</TableHead>
               <TableHead>Featured</TableHead>
+              <TableHead>Source</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {projects.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                   No projects found. Add your first project!
                 </TableCell>
               </TableRow>
@@ -191,28 +357,28 @@ const Projects = () => {
               projects.map((project) => (
                 <TableRow key={project.id}>
                   <TableCell className="font-medium">{project.title}</TableCell>
-                  <TableCell className="max-w-xs truncate">
-                    {project.description}
+                  <TableCell>
+                    <span className={`px-2 py-1 rounded text-xs ${
+                      project.downloadType === 'free' 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-blue-100 text-blue-800'
+                    }`}>
+                      {project.downloadType}
+                      {project.downloadType === 'paid' && project.price && ` $${project.price}`}
+                    </span>
                   </TableCell>
                   <TableCell>
-                    <div className="flex flex-wrap gap-1">
-                      {project.tags.slice(0, 2).map((tag) => (
-                        <span
-                          key={tag}
-                          className="bg-secondary text-xs px-2 py-1 rounded"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                      {project.tags.length > 2 && (
-                        <span className="bg-secondary text-xs px-2 py-1 rounded">
-                          +{project.tags.length - 2}
-                        </span>
-                      )}
-                    </div>
+                    {project.downloadType === 'paid' ? `$${project.price || 0}` : 'Free'}
                   </TableCell>
                   <TableCell>
                     {project.featured ? (
+                      <Check className="h-5 w-5 text-green-500" />
+                    ) : (
+                      <X className="h-5 w-5 text-muted-foreground" />
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {project.sourceVisible ? (
                       <Check className="h-5 w-5 text-green-500" />
                     ) : (
                       <X className="h-5 w-5 text-muted-foreground" />
@@ -241,93 +407,12 @@ const Projects = () => {
 
       {/* Add Project Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="sm:max-w-[625px]">
+        <DialogContent className="sm:max-w-[625px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add New Project</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleAddSubmit} className="space-y-4 py-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="title">Title</Label>
-                <Input
-                  id="title"
-                  name="title"
-                  value={formData.title}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="imageUrl">Image URL</Label>
-                <Input
-                  id="imageUrl"
-                  name="imageUrl"
-                  value={formData.imageUrl}
-                  onChange={handleChange}
-                  placeholder="/placeholder.svg"
-                />
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                required
-                rows={3}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="tags">Tags (comma separated)</Label>
-              <Input
-                id="tags"
-                name="tags"
-                value={formData.tags}
-                onChange={handleChange}
-                placeholder="React, TypeScript, Tailwind"
-                required
-              />
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="githubUrl">GitHub URL</Label>
-                <Input
-                  id="githubUrl"
-                  name="githubUrl"
-                  value={formData.githubUrl}
-                  onChange={handleChange}
-                  placeholder="https://github.com/..."
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="liveUrl">Live URL</Label>
-                <Input
-                  id="liveUrl"
-                  name="liveUrl"
-                  value={formData.liveUrl}
-                  onChange={handleChange}
-                  placeholder="https://..."
-                />
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <input
-                id="featured"
-                name="featured"
-                type="checkbox"
-                checked={formData.featured}
-                onChange={handleChange}
-                className="rounded"
-              />
-              <Label htmlFor="featured">Featured Project</Label>
-            </div>
-            
+          <form onSubmit={handleAddSubmit}>
+            <ProjectForm />
             <div className="flex justify-end space-x-2 pt-4">
               <button
                 type="button"
@@ -346,90 +431,12 @@ const Projects = () => {
 
       {/* Edit Project Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[625px]">
+        <DialogContent className="sm:max-w-[625px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Project</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleEditSubmit} className="space-y-4 py-4">
-            {/* Same form fields as Add Project Dialog */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-title">Title</Label>
-                <Input
-                  id="edit-title"
-                  name="title"
-                  value={formData.title}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-imageUrl">Image URL</Label>
-                <Input
-                  id="edit-imageUrl"
-                  name="imageUrl"
-                  value={formData.imageUrl}
-                  onChange={handleChange}
-                />
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="edit-description">Description</Label>
-              <Textarea
-                id="edit-description"
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                required
-                rows={3}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="edit-tags">Tags (comma separated)</Label>
-              <Input
-                id="edit-tags"
-                name="tags"
-                value={formData.tags}
-                onChange={handleChange}
-                required
-              />
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-githubUrl">GitHub URL</Label>
-                <Input
-                  id="edit-githubUrl"
-                  name="githubUrl"
-                  value={formData.githubUrl}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-liveUrl">Live URL</Label>
-                <Input
-                  id="edit-liveUrl"
-                  name="liveUrl"
-                  value={formData.liveUrl}
-                  onChange={handleChange}
-                />
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <input
-                id="edit-featured"
-                name="featured"
-                type="checkbox"
-                checked={formData.featured}
-                onChange={handleChange}
-                className="rounded"
-              />
-              <Label htmlFor="edit-featured">Featured Project</Label>
-            </div>
-            
+          <form onSubmit={handleEditSubmit}>
+            <ProjectForm isEdit={true} />
             <div className="flex justify-end space-x-2 pt-4">
               <button
                 type="button"

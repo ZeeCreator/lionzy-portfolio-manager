@@ -1,3 +1,4 @@
+
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
@@ -17,21 +18,14 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
       "@/components/ui": path.resolve(__dirname, "./src/components/ui"),
     },
-    // Tambahkan ekstensi file yang akan dicoba
     extensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']
   },
   build: {
     outDir: 'dist',
     sourcemap: true,
-    minify: 'swc',
-    terserOptions: {
-      compress: {
-        drop_console: true,
-      },
-    },
+    minify: 'esbuild',
     rollupOptions: {
       output: {
-        // Hapus manual chunks untuk ui
         manualChunks: {
           react: ['react', 'react-dom'],
           router: ['react-router-dom'],

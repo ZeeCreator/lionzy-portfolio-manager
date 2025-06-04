@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -18,6 +17,7 @@ import Dashboard from "./pages/Dashboard";
 import FileManager from "./pages/FileManager";
 import ShortLinks from "./pages/ShortLinks";
 import NotFound from "./pages/NotFound";
+import Configuration from "./pages/Configuration";
 
 // Admin Pages
 import Login from "./pages/Admin/Login";
@@ -120,6 +120,20 @@ const App = () => (
                   </main>
                   <Footer />
                 </div>
+              }
+            />
+            <Route
+              path="/configuration"
+              element={
+                <ProtectedRoute>
+                  <div className="flex flex-col min-h-screen">
+                    <Header />
+                    <main className="flex-grow pt-16">
+                      <Configuration />
+                    </main>
+                    <Footer />
+                  </div>
+                </ProtectedRoute>
               }
             />
             <Route
