@@ -1,10 +1,11 @@
 
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Github, ExternalLink, Edit } from "lucide-react";
+import { ArrowLeft, Github, ExternalLink, Edit, Download, DollarSign, Calendar, Tag } from "lucide-react";
 import { getProjectById } from "@/utils/projectService";
 import { Project } from "@/types";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useUser } from "@/contexts/UserContext";
 
 const ProjectDetail = () => {
@@ -23,6 +24,18 @@ const ProjectDetail = () => {
       setLoading(false);
     }
   }, [id]);
+
+  const handleDownload = () => {
+    if (!project) return;
+
+    if (project.downloadType === 'paid') {
+      // Redirect to payment gateway
+      window.open('/payment/' + project.id, '_blank');
+    } else if (project.downloadUrl) {
+      // Direct download
+      window.open(project.downloadUrl, '_blank');
+    }
+  };
 
   if (loading) {
     return (
@@ -75,47 +88,145 @@ const ProjectDetail = () => {
         )}
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-        <div>
-          <img 
-            src={project.imageUrl} 
-            alt={project.title} 
-            className="w-full h-auto rounded-lg shadow-md object-cover aspect-video"
-          />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+        {/* Main Content */}
+        <div className="lg:col-span-2 space-y-8">
+          {/* Project Image */}
+          <div className="aspect-video overflow-hidden rounded-lg">
+            <img 
+              src={project.imageUrl} 
+              alt={project.title} 
+              className="w-full h-full object-cover"
+            />
+          </div>
+
+          {/* Project Description */}
+          <Card>
+            <CardHeader>
+              <CardTitle>About This Project</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground leading-relaxed">
+                {project.description}
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Technologies Used */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Tag className="h-4 w-4" />
+                Technologies Used
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-2">
+                {project.tags.map((tag) => (
+                  <span 
+                    key={tag} 
+                    className="px-3 py-1 bg-secondary text-secondary-foreground rounded-full text-sm"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
-        <div>
-          <h1 className="text-3xl font-bold mb-2">{project.title}</h1>
-          <div className="flex flex-wrap gap-2 mb-4">
-            {project.tags.map((tag) => (
-              <span 
-                key={tag} 
-                className="px-2 py-1 bg-secondary text-secondary-foreground rounded-md text-xs"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-          <p className="text-muted-foreground mb-6">
-            {project.description}
-          </p>
-          <div className="flex flex-wrap gap-3">
-            {project.githubUrl && (
-              <Button asChild variant="outline">
-                <a href={project.githubUrl} target="_blank" rel="noopener noreferrer">
-                  <Github className="h-4 w-4 mr-2" />
-                  View Code
-                </a>
-              </Button>
-            )}
-            {project.liveUrl && (
-              <Button asChild>
-                <a href={project.liveUrl} target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="h-4 w-4 mr-2" />
-                  Live Demo
-                </a>
-              </Button>
-            )}
-          </div>
+
+        {/* Sidebar */}
+        <div className="space-y-6">
+          {/* Project Info */}
+          <Card>
+            <CardHeader>
+              <CardTitle>{project.title}</CardTitle>
+              {project.featured && (
+                <div className="mb-2">
+                  <span className="chip bg-primary/10 text-primary">Featured Project</span>
+                </div>
+              )}
+              <CardDescription className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Calendar className="h-3 w-3" />
+                Created {new Date(project.createdAt).toLocaleDateString()}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Action Buttons */}
+              <div className="space-y-3">
+                {project.liveUrl && (
+                  <Button asChild className="w-full">
+                    <a href={project.liveUrl} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      View Live Demo
+                    </a>
+                  </Button>
+                )}
+
+                {project.sourceVisible && project.githubUrl && (
+                  <Button asChild variant="outline" className="w-full">
+                    <a href={project.githubUrl} target="_blank" rel="noopener noreferrer">
+                      <Github className="h-4 w-4 mr-2" />
+                      View Source Code
+                    </a>
+                  </Button>
+                )}
+
+                {/* Download Section */}
+                {(project.downloadUrl || project.downloadType === 'paid') && (
+                  <div className="border-t pt-4">
+                    <h4 className="font-medium mb-3">Download Project</h4>
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center text-sm">
+                        <span>Price:</span>
+                        <span className="font-medium">
+                          {project.downloadType === 'paid' ? `$${project.price}` : 'Free'}
+                        </span>
+                      </div>
+                      <Button onClick={handleDownload} className="w-full">
+                        {project.downloadType === 'paid' ? (
+                          <>
+                            <DollarSign className="h-4 w-4 mr-2" />
+                            Buy & Download
+                          </>
+                        ) : (
+                          <>
+                            <Download className="h-4 w-4 mr-2" />
+                            Free Download
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Project Stats */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Project Details</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex justify-between items-center text-sm">
+                <span>Status:</span>
+                <span className="font-medium text-green-600">Completed</span>
+              </div>
+              <div className="flex justify-between items-center text-sm">
+                <span>Type:</span>
+                <span className="font-medium">
+                  {project.downloadType === 'paid' ? 'Premium' : 'Open Source'}
+                </span>
+              </div>
+              <div className="flex justify-between items-center text-sm">
+                <span>Last Updated:</span>
+                <span className="font-medium">
+                  {new Date(project.updatedAt).toLocaleDateString()}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

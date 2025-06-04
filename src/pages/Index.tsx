@@ -5,16 +5,18 @@ import { ArrowRight } from "lucide-react";
 import { getProjects } from "@/utils/projectService";
 import { getSettings } from "@/utils/settingsService";
 import { Project, SiteSettings } from "@/types";
-import { ProjectCard } from "@/components/ui/ProjectCard";
+import { ProjectGrid } from "@/components/ui/ProjectGrid";
 import { TypingAnimation } from "@/components/ui/TypingAnimation";
 import { EducationRoadmap } from "@/components/EducationRoadmap";
 
 const Index = () => {
   const [featuredProjects, setFeaturedProjects] = useState<Project[]>([]);
+  const [allProjects, setAllProjects] = useState<Project[]>([]);
   const [settings, setSettings] = useState<SiteSettings | null>(null);
 
   useEffect(() => {
     const projects = getProjects();
+    setAllProjects(projects);
     setFeaturedProjects(projects.filter(p => p.featured).slice(0, 3));
     setSettings(getSettings());
   }, []);
@@ -79,11 +81,7 @@ const Index = () => {
             </Link>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {featuredProjects.map((project) => (
-              <ProjectCard key={project.id} project={project} />
-            ))}
-          </div>
+          <ProjectGrid projects={featuredProjects} maxItems={3} />
           
           {featuredProjects.length === 0 && (
             <div className="text-center py-20">
@@ -95,6 +93,26 @@ const Index = () => {
           )}
         </div>
       </section>
+
+      {/* All Projects Preview Section */}
+      {allProjects.length > 3 && (
+        <section className="section bg-secondary/30">
+          <div className="container">
+            <div className="flex justify-between items-end mb-10">
+              <div>
+                <span className="chip mb-3">Recent Work</span>
+                <h2 className="text-3xl font-bold">Latest Projects</h2>
+                <p className="text-muted-foreground mt-2">A showcase of my recent development work</p>
+              </div>
+              <Link to="/projects" className="flex items-center text-sm font-medium text-primary hover:underline">
+                View all projects <ArrowRight size={16} className="ml-1" />
+              </Link>
+            </div>
+            
+            <ProjectGrid projects={allProjects} maxItems={6} />
+          </div>
+        </section>
+      )}
 
       {/* Education Roadmap Section */}
       {settings.showEducationRoadmap && settings.educationItems && settings.educationItems.length > 0 && (
