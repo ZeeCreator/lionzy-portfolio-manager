@@ -6,34 +6,29 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Copy, ExternalLink, Trash2, ToggleLeft, ToggleRight } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
+import { 
+  getShortLinks, 
+  createShortLink, 
+  deleteShortLink, 
+  toggleShortLinkStatus 
+} from "@/utils/shortLinkService";
 
 const ShortLinks = () => {
   const [shortLinks, setShortLinks] = useState<ShortLink[]>([]);
 
   useEffect(() => {
-    const storedLinks = localStorage.getItem('lionzy_shortlinks');
-    if (storedLinks) {
-      setShortLinks(JSON.parse(storedLinks));
-    }
+    setShortLinks(getShortLinks());
   }, []);
 
   const generateShortLink = (originalUrl: string, title: string): string => {
-    const shortCode = Math.random().toString(36).substring(2, 8);
-    const newLink: ShortLink = {
-      id: Date.now().toString(),
-      originalUrl,
-      shortCode,
-      title,
-      clickCount: 0,
-      createdAt: new Date().toISOString(),
-      active: true
-    };
-
-    const updatedLinks = [...shortLinks, newLink];
-    setShortLinks(updatedLinks);
-    localStorage.setItem('lionzy_shortlinks', JSON.stringify(updatedLinks));
-    
-    return shortCode;
+    try {
+      const newLink = createShortLink(originalUrl, title);
+      setShortLinks(getShortLinks());
+      return newLink.shortCode;
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to create short link");
+      throw error;
+    }
   };
 
   const copyToClipboard = (shortCode: string) => {
@@ -43,19 +38,21 @@ const ShortLinks = () => {
   };
 
   const toggleActive = (id: string) => {
-    const updatedLinks = shortLinks.map(link =>
-      link.id === id ? { ...link, active: !link.active } : link
-    );
-    setShortLinks(updatedLinks);
-    localStorage.setItem('lionzy_shortlinks', JSON.stringify(updatedLinks));
-    toast.success("Link status updated");
+    if (toggleShortLinkStatus(id)) {
+      setShortLinks(getShortLinks());
+      toast.success("Link status updated");
+    } else {
+      toast.error("Failed to update link status");
+    }
   };
 
-  const deleteLink = (id: string) => {
-    const updatedLinks = shortLinks.filter(link => link.id !== id);
-    setShortLinks(updatedLinks);
-    localStorage.setItem('lionzy_shortlinks', JSON.stringify(updatedLinks));
-    toast.success("Short link deleted");
+  const handleDeleteLink = (id: string) => {
+    if (deleteShortLink(id)) {
+      setShortLinks(getShortLinks());
+      toast.success("Short link deleted");
+    } else {
+      toast.error("Failed to delete short link");
+    }
   };
 
   return (
@@ -140,7 +137,7 @@ const ShortLinks = () => {
                               <Button
                                 size="sm"
                                 variant="destructive"
-                                onClick={() => deleteLink(link.id)}
+                                onClick={() => handleDeleteLink(link.id)}
                               >
                                 <Trash2 className="h-3 w-3" />
                               </Button>

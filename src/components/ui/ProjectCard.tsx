@@ -3,12 +3,15 @@ import { Link } from "react-router-dom";
 import { Project } from "@/types";
 import { Github, ExternalLink, Download, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { getAppConfig } from "@/utils/configService";
 
 interface ProjectCardProps {
   project: Project;
 }
 
 export function ProjectCard({ project }: ProjectCardProps) {
+  const config = getAppConfig();
+  
   const handleDownload = () => {
     if (project.downloadType === 'paid') {
       // Redirect to payment gateway
@@ -17,6 +20,11 @@ export function ProjectCard({ project }: ProjectCardProps) {
       // Direct download
       window.open(project.downloadUrl, '_blank');
     }
+  };
+
+  const handleBuy = () => {
+    // Redirect to payment gateway for purchase
+    window.open('/payment/' + project.id, '_blank');
   };
 
   return (
@@ -60,26 +68,27 @@ export function ProjectCard({ project }: ProjectCardProps) {
             ))}
           </div>
 
-          {/* Download Section */}
-          {(project.downloadUrl || project.downloadType === 'paid') && (
+          {/* Download/Buy Section */}
+          {config.projects.downloadEnabled && (project.downloadUrl || project.downloadType === 'paid') && (
             <div className="mb-4 p-3 bg-secondary/50 rounded-lg">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">
                   {project.downloadType === 'paid' ? `$${project.price}` : 'Free Download'}
                 </span>
-                <Button size="sm" onClick={handleDownload}>
-                  {project.downloadType === 'paid' ? (
-                    <>
-                      <DollarSign className="h-3 w-3 mr-1" />
-                      Buy
-                    </>
-                  ) : (
-                    <>
+                <div className="flex gap-2">
+                  {project.downloadType === 'free' && (
+                    <Button size="sm" onClick={handleDownload}>
                       <Download className="h-3 w-3 mr-1" />
-                      Download
-                    </>
+                      {config.projects.downloadButtonText}
+                    </Button>
                   )}
-                </Button>
+                  {project.downloadType === 'paid' && config.projects.paidDownloadsEnabled && (
+                    <Button size="sm" onClick={handleBuy}>
+                      <DollarSign className="h-3 w-3 mr-1" />
+                      {config.projects.buyButtonText}
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -94,7 +103,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
           </Link>
           
           <div className="flex space-x-3">
-            {project.sourceVisible && project.githubUrl && (
+            {config.projects.sourceCodeLinksEnabled && project.sourceVisible && project.githubUrl && (
               <a 
                 href={project.githubUrl} 
                 target="_blank" 
