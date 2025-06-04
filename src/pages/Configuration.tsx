@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { getAppConfig, updateAppConfig, updateFeatureConfig } from "@/utils/configService";
 import { AppConfig } from "@/types/config";
@@ -15,7 +14,6 @@ import {
   Download, 
   FileText, 
   Link, 
-  Animation, 
   Palette,
   Database,
   Globe,
@@ -345,7 +343,7 @@ const Configuration = () => {
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center space-x-2">
-                      <Animation className="h-5 w-5" />
+                      <Zap className="h-5 w-5" />
                       <span>Animation Configuration</span>
                     </CardTitle>
                   </CardHeader>
