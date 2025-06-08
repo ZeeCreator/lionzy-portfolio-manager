@@ -16,6 +16,7 @@ import Settings from "./pages/Settings";
 import Dashboard from "./pages/Dashboard";
 import FileManager from "./pages/FileManager";
 import ShortLinks from "./pages/ShortLinks";
+import ShortLinkRedirect from "./pages/ShortLinkRedirect";
 import NotFound from "./pages/NotFound";
 import Configuration from "./pages/Configuration";
 
@@ -37,6 +38,9 @@ const App = () => (
       <UserProvider>
         <BrowserRouter>
           <Routes>
+            {/* Short Link Redirect Route - Must be before other routes */}
+            <Route path="/s/:shortCode" element={<ShortLinkRedirect />} />
+
             {/* Public Routes */}
             <Route
               path="/"

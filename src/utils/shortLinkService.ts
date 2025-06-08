@@ -3,6 +3,24 @@ import { ShortLink } from "@/types";
 
 const STORAGE_KEY = "lionzy_shortlinks";
 
+// URL validation helper
+const isValidUrl = (url: string): boolean => {
+  try {
+    new URL(url);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+// Ensure URL has protocol
+const normalizeUrl = (url: string): string => {
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    return `https://${url}`;
+  }
+  return url;
+};
+
 export const getShortLinks = (): ShortLink[] => {
   if (typeof window === "undefined") return [];
   
@@ -23,6 +41,12 @@ export const getShortLinkByCode = (shortCode: string): ShortLink | undefined => 
 };
 
 export const createShortLink = (originalUrl: string, title: string, customCode?: string): ShortLink => {
+  const normalizedUrl = normalizeUrl(originalUrl.trim());
+  
+  if (!isValidUrl(normalizedUrl)) {
+    throw new Error("Please enter a valid URL");
+  }
+
   const links = getShortLinks();
   const shortCode = customCode || Math.random().toString(36).substring(2, 8);
   
@@ -32,9 +56,9 @@ export const createShortLink = (originalUrl: string, title: string, customCode?:
   
   const newLink: ShortLink = {
     id: Date.now().toString(),
-    originalUrl,
+    originalUrl: normalizedUrl,
     shortCode,
-    title,
+    title: title.trim() || "Untitled",
     clickCount: 0,
     createdAt: new Date().toISOString(),
     active: true

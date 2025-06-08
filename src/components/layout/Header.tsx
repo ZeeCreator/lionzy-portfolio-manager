@@ -1,189 +1,163 @@
 
-import { useState, useEffect } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, LogIn, LogOut } from "lucide-react";
-import { getSettings } from "@/utils/settingsService";
-import { SiteSettings } from "@/types";
-import { useUser } from "@/contexts/UserContext";
+import { useState } from "react";
+import { Menu, X, User, LogOut, Settings, BarChart3 } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { useUser } from "@/contexts/UserContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
-export default function Header() {
-  const [isOpen, setIsOpen] = useState(false);
-  const [settings, setSettings] = useState<SiteSettings | null>(null);
-  const [scrolled, setScrolled] = useState(false);
-  const location = useLocation();
+const Header = () => {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { user, logout } = useUser();
   const navigate = useNavigate();
-  const { isLoggedIn, logoutUser } = useUser();
-
-  useEffect(() => {
-    setSettings(getSettings());
-    
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 10);
-    };
-    
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  useEffect(() => {
-    // Close mobile menu when route changes
-    setIsOpen(false);
-  }, [location.pathname]);
-  
-  const handleLogin = () => {
-    navigate("/admin/login");
-  };
 
   const handleLogout = () => {
-    logoutUser();
+    logout();
     navigate("/");
   };
 
-  if (!settings) return null;
-
-  const navLinks = [
+  const navItems = [
     { name: "Home", href: "/" },
     { name: "Projects", href: "/projects" },
     { name: "About", href: "/about" },
     { name: "Contact", href: "/contact" },
+    { name: "Files", href: "/files" },
+    { name: "Short Links", href: "/shortlinks" },
   ];
 
   return (
-    <header 
-      className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${
-        scrolled ? "glass-nav shadow-sm py-3" : "bg-transparent py-5"
-      }`}
-    >
-      <div className="container mx-auto px-6 md:px-12">
-        <div className="flex items-center justify-between">
-          <Link 
-            to="/" 
-            className="text-2xl font-semibold tracking-tight transition-opacity hover:opacity-80"
-          >
-            {settings.siteName}
+    <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-sm border-b">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16">
+          <Link to="/" className="text-xl font-bold text-primary">
+            Lionzy
           </Link>
-          
-          <div className="flex items-center space-x-4">
-            <nav className="hidden md:block">
-              <ul className="flex space-x-8">
-                {navLinks.map((link) => (
-                  <li key={link.name}>
-                    <Link
-                      to={link.href}
-                      className={`subtle-underline text-sm font-medium ${
-                        location.pathname === link.href ? "text-primary" : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      {link.name}
-                    </Link>
-                  </li>
-                ))}
-                
-                {isLoggedIn && (
-                  <li>
-                    <Link
-                      to="/dashboard"
-                      className="subtle-underline text-sm font-medium text-muted-foreground hover:text-foreground"
-                    >
+
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex space-x-8">
+            {navItems.map((item) => (
+              <Link
+                key={item.name}
+                to={item.href}
+                className="text-foreground hover:text-primary transition-colors"
+              >
+                {item.name}
+              </Link>
+            ))}
+          </nav>
+
+          {/* User Menu */}
+          <div className="hidden md:flex items-center space-x-4">
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm">
+                    <User className="h-4 w-4 mr-2" />
+                    {user.name}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem asChild>
+                    <Link to="/dashboard">
+                      <BarChart3 className="h-4 w-4 mr-2" />
                       Dashboard
                     </Link>
-                  </li>
-                )}
-              </ul>
-            </nav>
-
-            {isLoggedIn ? (
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="hidden md:flex items-center" 
-                onClick={handleLogout}
-              >
-                <LogOut className="h-4 w-4 mr-1" />
-                Logout
-              </Button>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/settings">
+                      <Settings className="h-4 w-4 mr-2" />
+                      Settings
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout}>
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             ) : (
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="hidden md:flex items-center" 
-                onClick={handleLogin}
-              >
-                <LogIn className="h-4 w-4 mr-1" />
-                Login
-              </Button>
+              <Link to="/admin/login">
+                <Button variant="outline" size="sm">
+                  Login
+                </Button>
+              </Link>
             )}
           </div>
-          
+
+          {/* Mobile menu button */}
           <div className="md:hidden">
-            <button
-              onClick={() => setIsOpen(!isOpen)}
-              aria-label="Toggle menu"
-              className="text-foreground p-2 focus:outline-none"
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
-              {isOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
+              {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </Button>
           </div>
         </div>
-      </div>
-      
-      {/* Mobile menu */}
-      {isOpen && (
-        <div className="md:hidden absolute top-full left-0 right-0 glass-nav animate-fade-in">
-          <nav className="container mx-auto py-6 px-6">
-            <ul className="flex flex-col space-y-4">
-              {navLinks.map((link) => (
-                <li key={link.name}>
-                  <Link
-                    to={link.href}
-                    className={`block text-lg py-2 ${
-                      location.pathname === link.href ? "text-primary font-medium" : "text-muted-foreground"
-                    }`}
-                    onClick={() => setIsOpen(false)}
-                  >
-                    {link.name}
-                  </Link>
-                </li>
+
+        {/* Mobile Navigation */}
+        {isMenuOpen && (
+          <div className="md:hidden">
+            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-background border-t">
+              {navItems.map((item) => (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className="block px-3 py-2 text-base font-medium text-foreground hover:text-primary transition-colors"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {item.name}
+                </Link>
               ))}
-              
-              {isLoggedIn && (
-                <li>
+              {user ? (
+                <>
                   <Link
                     to="/dashboard"
-                    className="block text-lg py-2 text-muted-foreground"
-                    onClick={() => setIsOpen(false)}
+                    className="block px-3 py-2 text-base font-medium text-foreground hover:text-primary transition-colors"
+                    onClick={() => setIsMenuOpen(false)}
                   >
                     Dashboard
                   </Link>
-                </li>
-              )}
-              
-              <li className="pt-4 border-t border-border">
-                {isLoggedIn ? (
+                  <Link
+                    to="/settings"
+                    className="block px-3 py-2 text-base font-medium text-foreground hover:text-primary transition-colors"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Settings
+                  </Link>
                   <button
                     onClick={() => {
                       handleLogout();
-                      setIsOpen(false);
+                      setIsMenuOpen(false);
                     }}
-                    className="block w-full text-left text-lg py-2 text-muted-foreground"
+                    className="block w-full text-left px-3 py-2 text-base font-medium text-foreground hover:text-primary transition-colors"
                   >
                     Logout
                   </button>
-                ) : (
-                  <Link
-                    to="/admin/login"
-                    className="block text-lg py-2 text-muted-foreground"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    Login
-                  </Link>
-                )}
-              </li>
-            </ul>
-          </nav>
-        </div>
-      )}
+                </>
+              ) : (
+                <Link
+                  to="/admin/login"
+                  className="block px-3 py-2 text-base font-medium text-foreground hover:text-primary transition-colors"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Login
+                </Link>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
     </header>
   );
-}
+};
+
+export default Header;
