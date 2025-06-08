@@ -28,6 +28,9 @@ import Skills from "./pages/Admin/Skills";
 import Messages from "./pages/Admin/Messages";
 import { UserProvider } from "./contexts/UserContext";
 
+import HarisLogin from "./pages/Auth/HarisLogin";
+import HarisProtectedRoute from "./components/HarisProtectedRoute";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -102,30 +105,37 @@ const App = () => (
                 </div>
               }
             />
+
+            {/* Protected Routes - Files and Short Links */}
             <Route
               path="/files"
               element={
-                <div className="flex flex-col min-h-screen">
-                  <Header />
-                  <main className="flex-grow pt-16">
-                    <FileManager />
-                  </main>
-                  <Footer />
-                </div>
+                <HarisProtectedRoute>
+                  <div className="flex flex-col min-h-screen">
+                    <Header />
+                    <main className="flex-grow pt-16">
+                      <FileManager />
+                    </main>
+                    <Footer />
+                  </div>
+                </HarisProtectedRoute>
               }
             />
             <Route
               path="/shortlinks"
               element={
-                <div className="flex flex-col min-h-screen">
-                  <Header />
-                  <main className="flex-grow pt-16">
-                    <ShortLinks />
-                  </main>
-                  <Footer />
-                </div>
+                <HarisProtectedRoute>
+                  <div className="flex flex-col min-h-screen">
+                    <Header />
+                    <main className="flex-grow pt-16">
+                      <ShortLinks />
+                    </main>
+                    <Footer />
+                  </div>
+                </HarisProtectedRoute>
               }
             />
+
             <Route
               path="/configuration"
               element={
@@ -169,8 +179,10 @@ const App = () => (
               }
             />
 
-            {/* Admin Routes */}
+            {/* Auth Routes */}
             <Route path="/admin/login" element={<Login />} />
+            <Route path="/haris/login" element={<HarisLogin />} />
+            
             <Route
               path="/admin"
               element={
