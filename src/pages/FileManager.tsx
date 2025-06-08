@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { FileItem } from "@/types";
 import { FileUploader } from "@/components/FileManager/FileUploader";
@@ -18,6 +17,8 @@ import {
   getFileStats
 } from "@/utils/fileService";
 import { getAppConfig } from "@/utils/configService";
+import { useDownloadManager } from "@/hooks/useDownloadManager";
+import { DownloadProgress } from "@/components/FileManager/DownloadProgress";
 
 const FileManager = () => {
   const [files, setFiles] = useState<FileItem[]>([]);
@@ -28,6 +29,7 @@ const FileManager = () => {
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
   const [fileStats, setFileStats] = useState<any>(null);
   const config = getAppConfig();
+  const { downloads, startDownload, cancelDownload, completeDownload } = useDownloadManager();
 
   useEffect(() => {
     loadFiles();
@@ -103,17 +105,8 @@ const FileManager = () => {
 
   const handleDownload = (file: FileItem) => {
     incrementDownloadCount(file.id);
-    setFiles(getFiles());
-    
-    const link = document.createElement('a');
-    link.href = file.url;
-    link.download = file.name;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    toast.success("Download started");
-    loadFileStats();
+    startDownload(file);
+    toast.success(`Download started: ${file.name}`);
   };
 
   const handleView = (file: FileItem) => {
@@ -309,6 +302,17 @@ const FileManager = () => {
           </div>
         </div>
       </section>
+      
+      {/* Download Progress Bubbles */}
+      {downloads.map((download) => (
+        <DownloadProgress
+          key={download.id}
+          fileName={download.file.name}
+          downloadUrl={download.file.url}
+          onCancel={() => cancelDownload(download.id)}
+          onComplete={() => completeDownload(download.id)}
+        />
+      ))}
     </div>
   );
 };

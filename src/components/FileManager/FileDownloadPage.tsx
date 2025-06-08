@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { FileItem } from "@/types";
@@ -7,12 +6,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Download, File, ArrowLeft, Eye } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 import { getFileById, incrementDownloadCount } from "@/utils/fileService";
+import { useDownloadManager } from "@/hooks/useDownloadManager";
+import { DownloadProgress } from "./DownloadProgress";
 
 export function FileDownloadPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [file, setFile] = useState<FileItem | null>(null);
   const [downloading, setDownloading] = useState(false);
+  const { downloads, startDownload, cancelDownload, completeDownload } = useDownloadManager();
 
   useEffect(() => {
     if (id) {
@@ -39,14 +41,7 @@ export function FileDownloadPage() {
     
     setDownloading(true);
     incrementDownloadCount(file.id);
-    
-    const link = document.createElement('a');
-    link.href = file.url;
-    link.download = file.name;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
+    startDownload(file);
     toast.success("Download started");
     setDownloading(false);
     
@@ -140,6 +135,17 @@ export function FileDownloadPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Download Progress Bubbles */}
+      {downloads.map((download) => (
+        <DownloadProgress
+          key={download.id}
+          fileName={download.file.name}
+          downloadUrl={download.file.url}
+          onCancel={() => cancelDownload(download.id)}
+          onComplete={() => completeDownload(download.id)}
+        />
+      ))}
     </div>
   );
 }

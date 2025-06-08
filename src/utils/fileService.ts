@@ -1,4 +1,3 @@
-
 import { FileItem } from "@/types";
 
 const STORAGE_KEY = "lionzy_files";
@@ -166,4 +165,55 @@ export const getFileStats = () => {
     totalDownloads,
     typeStats,
   };
+};
+
+export const downloadFileWithProgress = async (
+  file: FileItem,
+  onProgress?: (progress: number) => void
+): Promise<void> => {
+  try {
+    const response = await fetch(file.url);
+    
+    if (!response.ok) {
+      throw new Error(`Download failed: ${response.statusText}`);
+    }
+
+    const contentLength = response.headers.get('content-length');
+    const total = contentLength ? parseInt(contentLength, 10) : 0;
+    
+    const reader = response.body?.getReader();
+    if (!reader) throw new Error('Failed to read response');
+
+    let received = 0;
+    const chunks: Uint8Array[] = [];
+
+    while (true) {
+      const { done, value } = await reader.read();
+      
+      if (done) break;
+      
+      chunks.push(value);
+      received += value.length;
+      
+      if (onProgress && total > 0) {
+        const progress = Math.round((received / total) * 100);
+        onProgress(progress);
+      }
+    }
+
+    // Create blob and trigger download
+    const blob = new Blob(chunks);
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = file.name;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+  } catch (error) {
+    console.error('Download failed:', error);
+    throw error;
+  }
 };
