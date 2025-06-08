@@ -14,11 +14,11 @@ import {
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { user, logout } = useUser();
+  const { isLoggedIn, logoutUser } = useUser();
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    logout();
+    logoutUser();
     navigate("/");
   };
 
@@ -54,12 +54,12 @@ const Header = () => {
 
           {/* User Menu */}
           <div className="hidden md:flex items-center space-x-4">
-            {user ? (
+            {isLoggedIn ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm">
                     <User className="h-4 w-4 mr-2" />
-                    {user.name}
+                    Admin
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -117,7 +117,7 @@ const Header = () => {
                   {item.name}
                 </Link>
               ))}
-              {user ? (
+              {isLoggedIn ? (
                 <>
                   <Link
                     to="/dashboard"
