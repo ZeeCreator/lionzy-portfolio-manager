@@ -26,7 +26,6 @@ export const createShortLink = (originalUrl: string, title: string, customCode?:
   const links = getShortLinks();
   const shortCode = customCode || Math.random().toString(36).substring(2, 8);
   
-  // Check if custom code already exists
   if (customCode && links.some(link => link.shortCode === customCode)) {
     throw new Error("Short code already exists");
   }
@@ -52,6 +51,14 @@ export const updateShortLink = (id: string, updates: Partial<Omit<ShortLink, "id
   const linkIndex = links.findIndex(l => l.id === id);
   
   if (linkIndex === -1) return undefined;
+  
+  // Check if shortCode is being updated and already exists
+  if (updates.shortCode && updates.shortCode !== links[linkIndex].shortCode) {
+    const existingLink = links.find(l => l.shortCode === updates.shortCode && l.id !== id);
+    if (existingLink) {
+      throw new Error("Short code already exists");
+    }
+  }
   
   const updatedLink: ShortLink = {
     ...links[linkIndex],
@@ -96,4 +103,28 @@ export const toggleShortLinkStatus = (id: string): boolean => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(links));
   
   return true;
+};
+
+export const duplicateShortLink = (id: string): ShortLink | undefined => {
+  const originalLink = getShortLinkById(id);
+  if (!originalLink) return undefined;
+  
+  const newShortCode = Math.random().toString(36).substring(2, 8);
+  return createShortLink(
+    originalLink.originalUrl,
+    `${originalLink.title} (Copy)`,
+    newShortCode
+  );
+};
+
+export const searchShortLinks = (query: string): ShortLink[] => {
+  const links = getShortLinks();
+  if (!query) return links;
+  
+  const searchTerm = query.toLowerCase();
+  return links.filter(link =>
+    link.title.toLowerCase().includes(searchTerm) ||
+    link.originalUrl.toLowerCase().includes(searchTerm) ||
+    link.shortCode.toLowerCase().includes(searchTerm)
+  );
 };

@@ -5,14 +5,17 @@ import { FileUploader } from "@/components/FileManager/FileUploader";
 import { FileGrid } from "@/components/FileManager/FileGrid";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Grid, List, Filter } from "lucide-react";
+import { Search, Grid, List, Filter, Trash2, Download } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 import { 
   getFiles, 
   uploadFile, 
   deleteFile, 
   incrementDownloadCount,
-  generateFileUrl 
+  deleteMultipleFiles,
+  searchFiles,
+  getFilesByType,
+  getFileStats
 } from "@/utils/fileService";
 import { getAppConfig } from "@/utils/configService";
 
@@ -22,10 +25,13 @@ const FileManager = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [selectedFileType, setSelectedFileType] = useState<string>("all");
+  const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
+  const [fileStats, setFileStats] = useState<any>(null);
   const config = getAppConfig();
 
   useEffect(() => {
     loadFiles();
+    loadFileStats();
   }, []);
 
   useEffect(() => {
@@ -38,21 +44,27 @@ const FileManager = () => {
     setFilteredFiles(loadedFiles);
   };
 
+  const loadFileStats = () => {
+    const stats = getFileStats();
+    setFileStats(stats);
+  };
+
   const filterFiles = () => {
     let filtered = files;
 
-    // Filter by search term
     if (searchTerm) {
-      filtered = filtered.filter(file =>
-        file.name.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      filtered = searchFiles(searchTerm);
     }
 
-    // Filter by file type
     if (selectedFileType !== "all") {
+      filtered = getFilesByType(selectedFileType);
+    }
+
+    if (searchTerm && selectedFileType !== "all") {
       filtered = filtered.filter(file => {
-        const fileExtension = file.name.split('.').pop()?.toLowerCase();
-        return fileExtension === selectedFileType;
+        const extension = file.name.split('.').pop()?.toLowerCase();
+        return extension === selectedFileType &&
+               file.name.toLowerCase().includes(searchTerm.toLowerCase());
       });
     }
 
@@ -65,14 +77,12 @@ const FileManager = () => {
       return;
     }
 
-    // Check file size limit
     const maxSizeBytes = config.fileManager.maxFileSize * 1024 * 1024;
     if (file.size > maxSizeBytes) {
       toast.error(`File size exceeds limit of ${config.fileManager.maxFileSize}MB`);
       return;
     }
 
-    // Check allowed file types
     if (!config.fileManager.allowedFileTypes.includes("*")) {
       const fileExtension = file.name.split('.').pop()?.toLowerCase();
       if (!fileExtension || !config.fileManager.allowedFileTypes.includes(fileExtension)) {
@@ -84,6 +94,7 @@ const FileManager = () => {
     try {
       await uploadFile(file);
       loadFiles();
+      loadFileStats();
       toast.success("File uploaded successfully!");
     } catch (error) {
       toast.error("Failed to upload file");
@@ -92,9 +103,8 @@ const FileManager = () => {
 
   const handleDownload = (file: FileItem) => {
     incrementDownloadCount(file.id);
-    setFiles(getFiles()); // Refresh to show updated download count
+    setFiles(getFiles());
     
-    // Create a download link
     const link = document.createElement('a');
     link.href = file.url;
     link.download = file.name;
@@ -103,6 +113,7 @@ const FileManager = () => {
     document.body.removeChild(link);
     
     toast.success("Download started");
+    loadFileStats();
   };
 
   const handleView = (file: FileItem) => {
@@ -112,10 +123,49 @@ const FileManager = () => {
   const handleDelete = (id: string) => {
     if (deleteFile(id)) {
       loadFiles();
+      loadFileStats();
+      setSelectedFiles(prev => prev.filter(fileId => fileId !== id));
       toast.success("File deleted successfully");
     } else {
       toast.error("Failed to delete file");
     }
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedFiles.length === 0) {
+      toast.error("No files selected");
+      return;
+    }
+
+    const deletedCount = deleteMultipleFiles(selectedFiles);
+    loadFiles();
+    loadFileStats();
+    setSelectedFiles([]);
+    toast.success(`${deletedCount} files deleted successfully`);
+  };
+
+  const toggleFileSelection = (id: string) => {
+    setSelectedFiles(prev =>
+      prev.includes(id)
+        ? prev.filter(fileId => fileId !== id)
+        : [...prev, id]
+    );
+  };
+
+  const selectAllFiles = () => {
+    if (selectedFiles.length === filteredFiles.length) {
+      setSelectedFiles([]);
+    } else {
+      setSelectedFiles(filteredFiles.map(file => file.id));
+    }
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
   const getUniqueFileTypes = () => {
@@ -135,6 +185,27 @@ const FileManager = () => {
           <p className="text-muted-foreground mt-2 animate-fade-in">
             Upload, manage, and share your files
           </p>
+          
+          {fileStats && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+              <div className="glass-card p-4 rounded-lg">
+                <p className="text-2xl font-bold">{fileStats.totalFiles}</p>
+                <p className="text-sm text-muted-foreground">Total Files</p>
+              </div>
+              <div className="glass-card p-4 rounded-lg">
+                <p className="text-2xl font-bold">{formatFileSize(fileStats.totalSize)}</p>
+                <p className="text-sm text-muted-foreground">Total Size</p>
+              </div>
+              <div className="glass-card p-4 rounded-lg">
+                <p className="text-2xl font-bold">{fileStats.totalDownloads}</p>
+                <p className="text-sm text-muted-foreground">Total Downloads</p>
+              </div>
+              <div className="glass-card p-4 rounded-lg">
+                <p className="text-2xl font-bold">{Object.keys(fileStats.typeStats).length}</p>
+                <p className="text-sm text-muted-foreground">File Types</p>
+              </div>
+            </div>
+          )}
         </div>
       </section>
       
@@ -182,10 +253,40 @@ const FileManager = () => {
                 </div>
               </div>
 
-              <div className="mb-4">
-                <p className="text-sm text-muted-foreground">
-                  Showing {filteredFiles.length} of {files.length} files
-                </p>
+              <div className="flex justify-between items-center mb-4">
+                <div className="flex items-center gap-4">
+                  <p className="text-sm text-muted-foreground">
+                    Showing {filteredFiles.length} of {files.length} files
+                  </p>
+                  {selectedFiles.length > 0 && (
+                    <p className="text-sm text-primary">
+                      {selectedFiles.length} files selected
+                    </p>
+                  )}
+                </div>
+                
+                <div className="flex gap-2">
+                  {filteredFiles.length > 0 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={selectAllFiles}
+                    >
+                      {selectedFiles.length === filteredFiles.length ? "Deselect All" : "Select All"}
+                    </Button>
+                  )}
+                  
+                  {selectedFiles.length > 0 && (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={handleBulkDelete}
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      Delete Selected
+                    </Button>
+                  )}
+                </div>
               </div>
 
               {filteredFiles.length > 0 ? (
@@ -194,6 +295,8 @@ const FileManager = () => {
                   onDownload={handleDownload}
                   onView={handleView}
                   onDelete={handleDelete}
+                  selectedFiles={selectedFiles}
+                  onToggleSelection={toggleFileSelection}
                 />
               ) : (
                 <div className="text-center py-12">

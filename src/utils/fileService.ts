@@ -22,7 +22,6 @@ export const uploadFile = (file: File): Promise<FileItem> => {
     try {
       const files = getFiles();
       
-      // Create a URL for the file (in a real app, this would be uploaded to a server)
       const fileUrl = URL.createObjectURL(file);
       
       const newFile: FileItem = {
@@ -45,8 +44,19 @@ export const uploadFile = (file: File): Promise<FileItem> => {
   });
 };
 
+export const uploadMultipleFiles = (files: FileList): Promise<FileItem[]> => {
+  const uploadPromises = Array.from(files).map(file => uploadFile(file));
+  return Promise.all(uploadPromises);
+};
+
 export const deleteFile = (id: string): boolean => {
   const files = getFiles();
+  const fileToDelete = files.find(f => f.id === id);
+  
+  if (fileToDelete && fileToDelete.url.startsWith('blob:')) {
+    URL.revokeObjectURL(fileToDelete.url);
+  }
+  
   const filteredFiles = files.filter(f => f.id !== id);
   
   if (filteredFiles.length === files.length) {
@@ -55,6 +65,16 @@ export const deleteFile = (id: string): boolean => {
   
   localStorage.setItem(STORAGE_KEY, JSON.stringify(filteredFiles));
   return true;
+};
+
+export const deleteMultipleFiles = (ids: string[]): number => {
+  let deletedCount = 0;
+  ids.forEach(id => {
+    if (deleteFile(id)) {
+      deletedCount++;
+    }
+  });
+  return deletedCount;
 };
 
 export const incrementDownloadCount = (id: string): void => {
@@ -71,7 +91,6 @@ export const generateFileUrl = (id: string): string | null => {
   const file = getFileById(id);
   if (!file) return null;
   
-  // In a real app, this would generate a secure download URL
   return `${window.location.origin}/api/files/${id}/download`;
 };
 
@@ -85,4 +104,66 @@ export const updateFileName = (id: string, newName: string): FileItem | undefine
   localStorage.setItem(STORAGE_KEY, JSON.stringify(files));
   
   return files[fileIndex];
+};
+
+export const duplicateFile = (id: string): FileItem | undefined => {
+  const originalFile = getFileById(id);
+  if (!originalFile) return undefined;
+  
+  const files = getFiles();
+  const fileExtension = originalFile.name.split('.').pop();
+  const baseName = originalFile.name.replace(/\.[^/.]+$/, "");
+  
+  const newFile: FileItem = {
+    ...originalFile,
+    id: Date.now().toString(),
+    name: `${baseName}_copy.${fileExtension}`,
+    uploadedAt: new Date().toISOString(),
+    downloadCount: 0,
+  };
+  
+  const updatedFiles = [...files, newFile];
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedFiles));
+  
+  return newFile;
+};
+
+export const searchFiles = (query: string): FileItem[] => {
+  const files = getFiles();
+  if (!query) return files;
+  
+  const searchTerm = query.toLowerCase();
+  return files.filter(file =>
+    file.name.toLowerCase().includes(searchTerm) ||
+    file.type.toLowerCase().includes(searchTerm)
+  );
+};
+
+export const getFilesByType = (fileType: string): FileItem[] => {
+  const files = getFiles();
+  if (fileType === "all") return files;
+  
+  return files.filter(file => {
+    const extension = file.name.split('.').pop()?.toLowerCase();
+    return extension === fileType;
+  });
+};
+
+export const getFileStats = () => {
+  const files = getFiles();
+  const totalSize = files.reduce((sum, file) => sum + file.size, 0);
+  const totalDownloads = files.reduce((sum, file) => sum + file.downloadCount, 0);
+  
+  const typeStats = files.reduce((stats, file) => {
+    const extension = file.name.split('.').pop()?.toLowerCase() || 'unknown';
+    stats[extension] = (stats[extension] || 0) + 1;
+    return stats;
+  }, {} as Record<string, number>);
+  
+  return {
+    totalFiles: files.length,
+    totalSize,
+    totalDownloads,
+    typeStats,
+  };
 };
