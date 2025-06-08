@@ -28,48 +28,63 @@ export function DownloadProgress({
 
     const startDownload = async () => {
       try {
-        // Simulate download progress
+        setStatus('downloading');
+        setProgress(0);
+
         const response = await fetch(downloadUrl, {
           signal: controller.signal
         });
 
         if (!response.ok) {
-          throw new Error('Download failed');
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const contentLength = response.headers.get('content-length');
         const total = contentLength ? parseInt(contentLength, 10) : 0;
         
         const reader = response.body?.getReader();
-        if (!reader) throw new Error('Failed to read response');
+        if (!reader) {
+          throw new Error('Failed to get response reader');
+        }
 
         let received = 0;
         const chunks: Uint8Array[] = [];
 
-        // Read the stream
         while (true) {
           const { done, value } = await reader.read();
           
           if (done) break;
           
+          // Check if cancelled during download
+          if (controller.signal.aborted) {
+            reader.cancel();
+            throw new Error('Download cancelled by user');
+          }
+          
           chunks.push(value);
           received += value.length;
           
           if (total > 0) {
-            const progressPercent = Math.round((received / total) * 100);
+            const progressPercent = Math.min(Math.round((received / total) * 100), 100);
             setProgress(progressPercent);
           } else {
-            // If no content length, simulate progress
-            setProgress(prev => Math.min(prev + 10, 90));
+            // Simulate progress for unknown content length
+            setProgress(prev => Math.min(prev + 5, 95));
           }
         }
 
-        // Create blob and download
+        // Check one more time before completing
+        if (controller.signal.aborted) {
+          throw new Error('Download cancelled by user');
+        }
+
+        // Create blob and trigger download
         const blob = new Blob(chunks);
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
         link.download = fileName;
+        link.style.display = 'none';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -77,29 +92,42 @@ export function DownloadProgress({
 
         setProgress(100);
         setStatus('completed');
+        
+        // Auto-complete after 3 seconds
         setTimeout(() => {
-          onComplete();
-        }, 2000);
+          if (!controller.signal.aborted) {
+            onComplete();
+          }
+        }, 3000);
 
       } catch (error: any) {
-        if (error.name === 'AbortError') {
+        console.error('Download error:', error);
+        
+        if (error.name === 'AbortError' || error.message.includes('cancelled')) {
           setStatus('cancelled');
+          // Don't call onCancel here as it's already been called
         } else {
           setStatus('error');
-          console.error('Download error:', error);
+          // Auto-remove error after 5 seconds
+          setTimeout(() => {
+            onCancel();
+          }, 5000);
         }
       }
     };
 
     startDownload();
 
+    // Cleanup function
     return () => {
-      controller.abort();
+      if (!controller.signal.aborted) {
+        controller.abort();
+      }
     };
-  }, [downloadUrl, fileName, onComplete]);
+  }, [downloadUrl, fileName, onComplete, onCancel]);
 
   const handleCancel = () => {
-    if (abortController) {
+    if (abortController && !abortController.signal.aborted) {
       abortController.abort();
     }
     setStatus('cancelled');
@@ -146,19 +174,19 @@ export function DownloadProgress({
   };
 
   return (
-    <Card className={`fixed bottom-4 right-4 w-80 z-50 shadow-lg ${getStatusColor()}`}>
+    <Card className={`fixed bottom-4 right-4 w-80 z-50 shadow-lg transition-all ${getStatusColor()}`}>
       <CardContent className="p-4">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center space-x-2">
             {getStatusIcon()}
             <span className="text-sm font-medium">{getStatusText()}</span>
           </div>
-          {status === 'downloading' && (
+          {(status === 'downloading' || status === 'error') && (
             <Button
               variant="ghost"
               size="sm"
               onClick={handleCancel}
-              className="h-6 w-6 p-0"
+              className="h-6 w-6 p-0 hover:bg-destructive/10"
             >
               <X className="h-3 w-3" />
             </Button>
@@ -166,12 +194,19 @@ export function DownloadProgress({
         </div>
         
         <div className="space-y-2">
-          <p className="text-xs text-muted-foreground truncate">{fileName}</p>
+          <p className="text-xs text-muted-foreground truncate" title={fileName}>
+            {fileName}
+          </p>
           {status === 'downloading' && (
             <div className="space-y-1">
               <Progress value={progress} className="h-2" />
               <p className="text-xs text-muted-foreground text-right">{progress}%</p>
             </div>
+          )}
+          {status === 'error' && (
+            <p className="text-xs text-destructive">
+              Download failed. Click X to dismiss.
+            </p>
           )}
         </div>
       </CardContent>
