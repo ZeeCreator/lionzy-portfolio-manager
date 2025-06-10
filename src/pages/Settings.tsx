@@ -1,574 +1,480 @@
+
 import { useState, useEffect } from "react";
-import { updateSettings, getSettings } from "@/utils/settingsService";
-import { SiteSettings, EducationItem } from "@/types";
-import { toast } from "@/components/ui/sonner";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Trash2, Edit, Save } from "lucide-react";
-import { useTheme } from "@/contexts/ThemeContext";
-import { Sun, Moon, Monitor } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import { toast } from "@/components/ui/sonner";
+import { 
+  Settings as SettingsIcon, 
+  User, 
+  Bell, 
+  Shield, 
+  Palette, 
+  Save,
+  Download,
+  Upload,
+  Link,
+  Database,
+  Monitor,
+  Moon,
+  Sun
+} from "lucide-react";
+import { getAppConfig, updateAppConfig, updateFeatureConfig } from "@/utils/configService";
+import { AppConfig } from "@/types/config";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 const Settings = () => {
-  const [settings, setSettings] = useState<SiteSettings>(getSettings());
-  const [editingEducation, setEditingEducation] = useState<string | null>(null);
-  const [newEducationItem, setNewEducationItem] = useState<Partial<EducationItem>>({
-    title: "",
-    description: "",
-    progress: 0,
-    category: "",
-    completed: false,
-  });
-  const { theme, setTheme } = useTheme();
+  const [config, setConfig] = useState<AppConfig | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const storedSettings = getSettings();
-    setSettings(storedSettings);
+    loadConfig();
   }, []);
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value, type, checked } = e.target as HTMLInputElement;
-    
-    if (name.includes(".")) {
-      const [parent, child] = name.split(".");
-      setSettings((prev) => ({
-        ...prev,
-        [parent]: {
-          ...prev[parent as keyof SiteSettings] as Record<string, unknown>,
-          [child]: value
-        }
-      }));
-    } else if (type === "checkbox") {
-      setSettings((prev) => ({ ...prev, [name]: checked }));
-    } else {
-      setSettings((prev) => ({ ...prev, [name]: value }));
+  const loadConfig = () => {
+    try {
+      const appConfig = getAppConfig();
+      setConfig(appConfig);
+    } catch (error) {
+      toast.error("Gagal memuat konfigurasi");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleEducationItemChange = (id: string, field: keyof EducationItem, value: any) => {
-    setSettings(prev => ({
-      ...prev,
-      educationItems: prev.educationItems.map(item =>
-        item.id === id ? { ...item, [field]: value } : item
-      )
-    }));
-  };
-
-  const addEducationItem = () => {
-    if (!newEducationItem.title || !newEducationItem.category) {
-      toast.error("Please fill in title and category");
-      return;
+  const handleFeatureToggle = (featureId: string, enabled: boolean) => {
+    try {
+      const updatedConfig = updateFeatureConfig(featureId, enabled);
+      setConfig(updatedConfig);
+      toast.success(enabled ? "Fitur diaktifkan" : "Fitur dinonaktifkan");
+    } catch (error) {
+      toast.error("Gagal memperbarui konfigurasi");
     }
-
-    const item: EducationItem = {
-      id: Date.now().toString(),
-      title: newEducationItem.title || "",
-      description: newEducationItem.description || "",
-      progress: newEducationItem.progress || 0,
-      category: newEducationItem.category || "",
-      completed: newEducationItem.completed || false,
-    };
-
-    setSettings(prev => ({
-      ...prev,
-      educationItems: [...prev.educationItems, item]
-    }));
-
-    setNewEducationItem({
-      title: "",
-      description: "",
-      progress: 0,
-      category: "",
-      completed: false,
-    });
-
-    toast.success("Education item added!");
   };
 
-  const deleteEducationItem = (id: string) => {
-    setSettings(prev => ({
-      ...prev,
-      educationItems: prev.educationItems.filter(item => item.id !== id)
-    }));
-    toast.success("Education item deleted!");
+  const handleConfigUpdate = (section: keyof AppConfig, updates: any) => {
+    if (!config) return;
+
+    try {
+      const updatedConfig = updateAppConfig({
+        [section]: { ...config[section], ...updates }
+      });
+      setConfig(updatedConfig);
+      toast.success("Konfigurasi berhasil diperbarui");
+    } catch (error) {
+      toast.error("Gagal memperbarui konfigurasi");
+    }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    updateSettings(settings);
-    toast.success("Settings saved successfully!");
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-muted-foreground">Memuat pengaturan...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!config) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-muted-foreground">Gagal memuat konfigurasi</p>
+          <Button onClick={loadConfig} className="mt-4">
+            Coba Lagi
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen">
-      <section className="py-20 px-6 md:px-12 bg-secondary/50">
-        <div className="container">
-          <h1 className="text-4xl font-bold">Pengaturan</h1>
-          <p className="text-muted-foreground mt-2">
-            Sesuaikan situs web portofolio Anda
-          </p>
-        </div>
-      </section>
-      
-      <section className="py-16 px-6 md:px-12">
-        <div className="container">
-          <form onSubmit={handleSubmit} className="max-w-4xl mx-auto">
-            <Tabs defaultValue="general" className="w-full">
-              <TabsList className="grid w-full grid-cols-6">
-                <TabsTrigger value="general">Umum</TabsTrigger>
-                <TabsTrigger value="social">Sosial</TabsTrigger>
-                <TabsTrigger value="education">Pendidikan</TabsTrigger>
-                <TabsTrigger value="features">Fitur</TabsTrigger>
-                <TabsTrigger value="appearance">Tampilan</TabsTrigger>
-                <TabsTrigger value="theme">Tema</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="general" className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Pengaturan Umum</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="siteName">Nama Situs</Label>
-                        <Input
-                          id="siteName"
-                          name="siteName"
-                          value={settings.siteName}
-                          onChange={handleInputChange}
-                          required
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="ownerName">Nama Anda</Label>
-                        <Input
-                          id="ownerName"
-                          name="ownerName"
-                          value={settings.ownerName}
-                          onChange={handleInputChange}
-                          required
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="aboutText">Teks Tentang</Label>
-                      <Textarea
-                        id="aboutText"
-                        name="aboutText"
-                        value={settings.aboutText}
-                        onChange={handleInputChange}
-                        rows={5}
-                        required
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="contactEmail">Email Kontak</Label>
-                      <Input
-                        id="contactEmail"
-                        name="contactEmail"
-                        type="email"
-                        value={settings.contactEmail}
-                        onChange={handleInputChange}
-                        required
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="social" className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Sosial Media & Donasi</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="social.github">GitHub</Label>
-                        <Input
-                          id="social.github"
-                          name="social.github"
-                          value={settings.social.github || ""}
-                          onChange={handleInputChange}
-                          placeholder="https://github.com/yourusername"
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="social.twitter">Twitter</Label>
-                        <Input
-                          id="social.twitter"
-                          name="social.twitter"
-                          value={settings.social.twitter || ""}
-                          onChange={handleInputChange}
-                          placeholder="https://twitter.com/yourusername"
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="social.linkedin">LinkedIn</Label>
-                        <Input
-                          id="social.linkedin"
-                          name="social.linkedin"
-                          value={settings.social.linkedin || ""}
-                          onChange={handleInputChange}
-                          placeholder="https://linkedin.com/in/yourusername"
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="social.instagram">Instagram</Label>
-                        <Input
-                          id="social.instagram"
-                          name="social.instagram"
-                          value={settings.social.instagram || ""}
-                          onChange={handleInputChange}
-                          placeholder="https://instagram.com/yourusername"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-                      <div className="space-y-2">
-                        <Label htmlFor="saweria.username">Username Saweria</Label>
-                        <Input
-                          id="saweria.username"
-                          name="saweria.username"
-                          value={settings.saweria.username}
-                          onChange={handleInputChange}
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="saweria.url">URL Saweria</Label>
-                        <Input
-                          id="saweria.url"
-                          name="saweria.url"
-                          value={settings.saweria.url}
-                          onChange={handleInputChange}
-                          placeholder="https://saweria.co/yourusername"
-                        />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="education" className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Rencana Pendidikan</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center space-x-2">
-                      <input
-                        id="showEducationRoadmap"
-                        name="showEducationRoadmap"
-                        type="checkbox"
-                        checked={settings.showEducationRoadmap}
-                        onChange={handleInputChange}
-                        className="rounded"
-                      />
-                      <Label htmlFor="showEducationRoadmap">Tampilkan Rencana Pendidikan</Label>
-                    </div>
-
-                    {settings.showEducationRoadmap && (
-                      <div className="space-y-4">
-                        <h3 className="text-lg font-medium">Tambahkan Item Baru</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <Input
-                            placeholder="Judul"
-                            value={newEducationItem.title || ""}
-                            onChange={(e) => setNewEducationItem(prev => ({ ...prev, title: e.target.value }))}
-                          />
-                          <Input
-                            placeholder="Kategori"
-                            value={newEducationItem.category || ""}
-                            onChange={(e) => setNewEducationItem(prev => ({ ...prev, category: e.target.value }))}
-                          />
-                        </div>
-                        <Textarea
-                          placeholder="Deskripsi"
-                          value={newEducationItem.description || ""}
-                          onChange={(e) => setNewEducationItem(prev => ({ ...prev, description: e.target.value }))}
-                        />
-                        <div className="flex items-center space-x-4">
-                          <div className="space-y-2">
-                            <Label>Progres (%)</Label>
-                            <Input
-                              type="number"
-                              min="0"
-                              max="100"
-                              value={newEducationItem.progress || 0}
-                              onChange={(e) => setNewEducationItem(prev => ({ ...prev, progress: parseInt(e.target.value) }))}
-                            />
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <input
-                              type="checkbox"
-                              checked={newEducationItem.completed || false}
-                              onChange={(e) => setNewEducationItem(prev => ({ ...prev, completed: e.target.checked }))}
-                              className="rounded"
-                            />
-                            <Label>Selesai</Label>
-                          </div>
-                          <Button type="button" onClick={addEducationItem}>
-                            <Plus className="h-4 w-4 mr-2" />
-                            Tambahkan Item
-                          </Button>
-                        </div>
-
-                        <div className="space-y-4">
-                          <h3 className="text-lg font-medium">Item Saat Ini</h3>
-                          {settings.educationItems.map((item) => (
-                            <div key={item.id} className="border rounded-lg p-4 space-y-2">
-                              {editingEducation === item.id ? (
-                                <div className="space-y-2">
-                                  <Input
-                                    value={item.title}
-                                    onChange={(e) => handleEducationItemChange(item.id, 'title', e.target.value)}
-                                  />
-                                  <Input
-                                    value={item.category}
-                                    onChange={(e) => handleEducationItemChange(item.id, 'category', e.target.value)}
-                                  />
-                                  <Textarea
-                                    value={item.description}
-                                    onChange={(e) => handleEducationItemChange(item.id, 'description', e.target.value)}
-                                  />
-                                  <div className="flex items-center space-x-4">
-                                    <Input
-                                      type="number"
-                                      min="0"
-                                      max="100"
-                                      value={item.progress}
-                                      onChange={(e) => handleEducationItemChange(item.id, 'progress', parseInt(e.target.value))}
-                                    />
-                                    <div className="flex items-center space-x-2">
-                                      <input
-                                        type="checkbox"
-                                        checked={item.completed}
-                                        onChange={(e) => handleEducationItemChange(item.id, 'completed', e.target.checked)}
-                                        className="rounded"
-                                      />
-                                      <Label>Selesai</Label>
-                                    </div>
-                                    <Button size="sm" onClick={() => setEditingEducation(null)}>
-                                      <Save className="h-4 w-4" />
-                                    </Button>
-                                  </div>
-                                </div>
-                              ) : (
-                                <div className="flex justify-between items-start">
-                                  <div>
-                                    <h4 className="font-medium">{item.title}</h4>
-                                    <p className="text-sm text-muted-foreground">{item.category}</p>
-                                    <p className="text-sm">{item.description}</p>
-                                    <p className="text-sm">Progres: {item.progress}% {item.completed && "(Selesai)"}</p>
-                                  </div>
-                                  <div className="flex space-x-2">
-                                    <Button size="sm" variant="outline" onClick={() => setEditingEducation(item.id)}>
-                                      <Edit className="h-4 w-4" />
-                                    </Button>
-                                    <Button size="sm" variant="destructive" onClick={() => deleteEducationItem(item.id)}>
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="features" className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Konfigurasi Fitur</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-4">
-                        <h3 className="text-lg font-medium">Fitur Proyek</h3>
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <Label>Enable Download Feature</Label>
-                            <input type="checkbox" defaultChecked className="rounded" />
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <Label>Enable Paid Downloads</Label>
-                            <input type="checkbox" defaultChecked className="rounded" />
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <Label>Show Source Code Links</Label>
-                            <input type="checkbox" defaultChecked className="rounded" />
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-4">
-                        <h3 className="text-lg font-medium">File Manager</h3>
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <Label>Enable File Upload</Label>
-                            <input type="checkbox" defaultChecked className="rounded" />
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <Label>Enable URL Generator</Label>
-                            <input type="checkbox" defaultChecked className="rounded" />
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <Label>Enable REST API</Label>
-                            <input type="checkbox" defaultChecked className="rounded" />
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-4">
-                        <h3 className="text-lg font-medium">Short Links</h3>
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <Label>Enable Short Link Generator</Label>
-                            <input type="checkbox" defaultChecked className="rounded" />
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <Label>Enable Click Tracking</Label>
-                            <input type="checkbox" defaultChecked className="rounded" />
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-4">
-                        <h3 className="text-lg font-medium">Animations</h3>
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <Label>Enable Typing Animation</Label>
-                            <input type="checkbox" defaultChecked className="rounded" />
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <Label>Enable Fade-in Animation</Label>
-                            <input type="checkbox" defaultChecked className="rounded" />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="appearance" className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Pengaturan Tampilan</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="backgroundImage">Gambar Latar Belakang</Label>
-                      <Input
-                        id="backgroundImage"
-                        name="backgroundImage"
-                        value={settings.backgroundImage}
-                        onChange={handleInputChange}
-                        placeholder="mountain-1.jpg"
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label>Pengaturan Tema</Label>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="flex items-center justify-between">
-                          <Label>Mode Gelap</Label>
-                          <input type="checkbox" className="rounded" />
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <Label>Auto Tema</Label>
-                          <input type="checkbox" defaultChecked className="rounded" />
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="theme" className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Pengaturan Tema</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className="space-y-4">
-                      <Label className="text-base font-medium">Pilih Tema</Label>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div 
-                          className={`p-4 border rounded-lg cursor-pointer transition-all ${theme === 'light' ? 'border-primary bg-primary/5' : 'border-border'}`}
-                          onClick={() => setTheme('light')}
-                        >
-                          <div className="flex items-center space-x-2">
-                            <Sun className="h-5 w-5" />
-                            <span className="font-medium">Terang</span>
-                          </div>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            Tema terang untuk penggunaan siang hari
-                          </p>
-                        </div>
-                        
-                        <div 
-                          className={`p-4 border rounded-lg cursor-pointer transition-all ${theme === 'dark' ? 'border-primary bg-primary/5' : 'border-border'}`}
-                          onClick={() => setTheme('dark')}
-                        >
-                          <div className="flex items-center space-x-2">
-                            <Moon className="h-5 w-5" />
-                            <span className="font-medium">Gelap</span>
-                          </div>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            Tema gelap untuk penggunaan malam hari
-                          </p>
-                        </div>
-                        
-                        <div 
-                          className={`p-4 border rounded-lg cursor-pointer transition-all ${theme === 'auto' ? 'border-primary bg-primary/5' : 'border-border'}`}
-                          onClick={() => setTheme('auto')}
-                        >
-                          <div className="flex items-center space-x-2">
-                            <Monitor className="h-5 w-5" />
-                            <span className="font-medium">Otomatis</span>
-                          </div>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            Mengikuti pengaturan sistem
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
-
-            <div className="mt-8 flex justify-end">
-              <Button type="submit" className="btn-primary">
-                Simpan Semua Pengaturan
-              </Button>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+      <div className="container py-16 px-6">
+        <div className="max-w-4xl mx-auto space-y-8">
+          <div className="text-center space-y-4">
+            <div className="flex justify-center">
+              <div className="p-3 bg-primary/10 rounded-full">
+                <SettingsIcon className="h-8 w-8 text-primary" />
+              </div>
             </div>
-          </form>
+            <h1 className="text-4xl font-bold">Pengaturan Aplikasi</h1>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              Kelola konfigurasi dan fitur aplikasi sesuai kebutuhan Anda
+            </p>
+          </div>
+
+          {/* Theme Settings */}
+          <Card className="glass-card">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Palette className="h-5 w-5" />
+                Pengaturan Tema
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label className="text-base font-medium">Pengalih Tema</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Aktifkan pengalih tema gelap/terang/otomatis
+                  </p>
+                </div>
+                <ThemeToggle />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Feature Management */}
+          <Card className="glass-card">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5" />
+                Manajemen Fitur
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {config.features.map((feature) => (
+                <div key={feature.id} className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Label className="text-base font-medium">{feature.name}</Label>
+                      <Badge variant={feature.enabled ? "default" : "secondary"}>
+                        {feature.enabled ? "Aktif" : "Nonaktif"}
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {feature.description}
+                    </p>
+                  </div>
+                  <Switch
+                    checked={feature.enabled}
+                    onCheckedChange={(checked) => handleFeatureToggle(feature.id, checked)}
+                  />
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          {/* Project Settings */}
+          <Card className="glass-card">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Database className="h-5 w-5" />
+                Pengaturan Proyek
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="downloadButton">Teks Tombol Unduh</Label>
+                  <Input
+                    id="downloadButton"
+                    value={config.projects.downloadButtonText}
+                    onChange={(e) => handleConfigUpdate('projects', { downloadButtonText: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="buyButton">Teks Tombol Beli</Label>
+                  <Input
+                    id="buyButton"
+                    value={config.projects.buyButtonText}
+                    onChange={(e) => handleConfigUpdate('projects', { buyButtonText: e.target.value })}
+                  />
+                </div>
+              </div>
+              
+              <Separator />
+              
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-base font-medium">Unduhan Diaktifkan</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Aktifkan fitur unduhan untuk proyek
+                    </p>
+                  </div>
+                  <Switch
+                    checked={config.projects.downloadEnabled}
+                    onCheckedChange={(checked) => handleConfigUpdate('projects', { downloadEnabled: checked })}
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-base font-medium">Unduhan Berbayar</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Aktifkan fitur unduhan berbayar
+                    </p>
+                  </div>
+                  <Switch
+                    checked={config.projects.paidDownloadsEnabled}
+                    onCheckedChange={(checked) => handleConfigUpdate('projects', { paidDownloadsEnabled: checked })}
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-base font-medium">Tautan Source Code</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Tampilkan tautan ke source code proyek
+                    </p>
+                  </div>
+                  <Switch
+                    checked={config.projects.sourceCodeLinksEnabled}
+                    onCheckedChange={(checked) => handleConfigUpdate('projects', { sourceCodeLinksEnabled: checked })}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* File Manager Settings */}
+          <Card className="glass-card">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Upload className="h-5 w-5" />
+                Pengaturan Pengelola File
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="maxFileSize">Ukuran File Maksimal (MB)</Label>
+                  <Input
+                    id="maxFileSize"
+                    type="number"
+                    value={config.fileManager.maxFileSize}
+                    onChange={(e) => handleConfigUpdate('fileManager', { maxFileSize: parseInt(e.target.value) })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="allowedTypes">Jenis File yang Diizinkan</Label>
+                  <Input
+                    id="allowedTypes"
+                    value={config.fileManager.allowedFileTypes.join(', ')}
+                    onChange={(e) => handleConfigUpdate('fileManager', { allowedFileTypes: e.target.value.split(', ') })}
+                    placeholder="jpg, png, pdf, atau * untuk semua"
+                  />
+                </div>
+              </div>
+              
+              <Separator />
+              
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-base font-medium">Unggah File</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Aktifkan fitur unggah file
+                    </p>
+                  </div>
+                  <Switch
+                    checked={config.fileManager.uploadEnabled}
+                    onCheckedChange={(checked) => handleConfigUpdate('fileManager', { uploadEnabled: checked })}
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-base font-medium">Generator URL</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Aktifkan generator URL untuk file
+                    </p>
+                  </div>
+                  <Switch
+                    checked={config.fileManager.urlGeneratorEnabled}
+                    onCheckedChange={(checked) => handleConfigUpdate('fileManager', { urlGeneratorEnabled: checked })}
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-base font-medium">REST API</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Aktifkan REST API untuk file
+                    </p>
+                  </div>
+                  <Switch
+                    checked={config.fileManager.restApiEnabled}
+                    onCheckedChange={(checked) => handleConfigUpdate('fileManager', { restApiEnabled: checked })}
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-base font-medium">Tampilan Grid Default</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Gunakan tampilan grid sebagai default
+                    </p>
+                  </div>
+                  <Switch
+                    checked={config.fileManager.gridViewDefault}
+                    onCheckedChange={(checked) => handleConfigUpdate('fileManager', { gridViewDefault: checked })}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Short Links Settings */}
+          <Card className="glass-card">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Link className="h-5 w-5" />
+                Pengaturan Tautan Pendek
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="defaultDomain">Domain Default</Label>
+                <Input
+                  id="defaultDomain"
+                  value={config.shortLinks.defaultDomain}
+                  onChange={(e) => handleConfigUpdate('shortLinks', { defaultDomain: e.target.value })}
+                />
+              </div>
+              
+              <Separator />
+              
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-base font-medium">Generator Tautan</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Aktifkan generator tautan pendek
+                    </p>
+                  </div>
+                  <Switch
+                    checked={config.shortLinks.generatorEnabled}
+                    onCheckedChange={(checked) => handleConfigUpdate('shortLinks', { generatorEnabled: checked })}
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-base font-medium">Pelacakan Klik</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Aktifkan pelacakan klik untuk tautan
+                    </p>
+                  </div>
+                  <Switch
+                    checked={config.shortLinks.clickTrackingEnabled}
+                    onCheckedChange={(checked) => handleConfigUpdate('shortLinks', { clickTrackingEnabled: checked })}
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-base font-medium">Domain Kustom</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Aktifkan dukungan domain kustom
+                    </p>
+                  </div>
+                  <Switch
+                    checked={config.shortLinks.customDomainEnabled}
+                    onCheckedChange={(checked) => handleConfigUpdate('shortLinks', { customDomainEnabled: checked })}
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-base font-medium">Analitik</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Aktifkan fitur analitik untuk tautan
+                    </p>
+                  </div>
+                  <Switch
+                    checked={config.shortLinks.analyticsEnabled}
+                    onCheckedChange={(checked) => handleConfigUpdate('shortLinks', { analyticsEnabled: checked })}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Animation Settings */}
+          <Card className="glass-card">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Monitor className="h-5 w-5" />
+                Pengaturan Animasi
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="typingSpeed">Kecepatan Mengetik (ms)</Label>
+                  <Input
+                    id="typingSpeed"
+                    type="number"
+                    value={config.animations.typingSpeed}
+                    onChange={(e) => handleConfigUpdate('animations', { typingSpeed: parseInt(e.target.value) })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="fadeInDuration">Durasi Fade In (ms)</Label>
+                  <Input
+                    id="fadeInDuration"
+                    type="number"
+                    value={config.animations.fadeInDuration}
+                    onChange={(e) => handleConfigUpdate('animations', { fadeInDuration: parseInt(e.target.value) })}
+                  />
+                </div>
+              </div>
+              
+              <Separator />
+              
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-base font-medium">Animasi Mengetik</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Aktifkan animasi efek mengetik
+                    </p>
+                  </div>
+                  <Switch
+                    checked={config.animations.typingAnimationEnabled}
+                    onCheckedChange={(checked) => handleConfigUpdate('animations', { typingAnimationEnabled: checked })}
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-base font-medium">Animasi Fade In</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Aktifkan animasi fade in untuk elemen
+                    </p>
+                  </div>
+                  <Switch
+                    checked={config.animations.fadeInAnimationEnabled}
+                    onCheckedChange={(checked) => handleConfigUpdate('animations', { fadeInAnimationEnabled: checked })}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Save Configuration */}
+          <div className="flex justify-center">
+            <Button 
+              onClick={() => toast.success("Konfigurasi tersimpan otomatis")}
+              size="lg"
+              className="min-w-[200px]"
+            >
+              <Save className="h-4 w-4 mr-2" />
+              Simpan Perubahan
+            </Button>
+          </div>
         </div>
-      </section>
+      </div>
     </div>
   );
 };
 
 export default Settings;
-
-</edits_to_apply>
