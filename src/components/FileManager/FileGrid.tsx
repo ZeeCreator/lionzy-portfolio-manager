@@ -1,6 +1,6 @@
 
 import { FileItem } from "@/types";
-import { File, Download, Eye, Trash2 } from "lucide-react";
+import { File, Download, Eye, Trash2, Link } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -9,6 +9,7 @@ interface FileGridProps {
   onDownload: (file: FileItem) => void;
   onView: (file: FileItem) => void;
   onDelete: (id: string) => void;
+  onGenerateLink?: (file: FileItem) => void;
   selectedFiles?: string[];
   onToggleSelection?: (id: string) => void;
 }
@@ -18,6 +19,7 @@ export function FileGrid({
   onDownload, 
   onView, 
   onDelete,
+  onGenerateLink,
   selectedFiles = [],
   onToggleSelection
 }: FileGridProps) {
@@ -56,19 +58,25 @@ export function FileGrid({
             </div>
             
             <div className="text-xs text-muted-foreground">
-              <p>Downloads: {file.downloadCount}</p>
-              <p>Uploaded: {new Date(file.uploadedAt).toLocaleDateString()}</p>
+              <p>Unduhan: {file.downloadCount}</p>
+              <p>Diunggah: {new Date(file.uploadedAt).toLocaleDateString('id-ID')}</p>
             </div>
             
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1">
               <Button size="sm" variant="outline" onClick={() => onView(file)}>
                 <Eye className="h-3 w-3 mr-1" />
-                View
+                Lihat
               </Button>
               <Button size="sm" onClick={() => onDownload(file)}>
                 <Download className="h-3 w-3 mr-1" />
-                Download
+                Unduh
               </Button>
+              {onGenerateLink && (
+                <Button size="sm" variant="secondary" onClick={() => onGenerateLink(file)}>
+                  <Link className="h-3 w-3 mr-1" />
+                  Tautan
+                </Button>
+              )}
               <Button 
                 size="sm" 
                 variant="destructive" 

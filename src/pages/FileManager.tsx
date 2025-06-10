@@ -2,9 +2,10 @@ import { useState, useEffect } from "react";
 import { FileItem } from "@/types";
 import { FileUploader } from "@/components/FileManager/FileUploader";
 import { FileGrid } from "@/components/FileManager/FileGrid";
+import { DownloadLinkGenerator } from "@/components/FileManager/DownloadLinkGenerator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Grid, List, Filter, Trash2, Download } from "lucide-react";
+import { Search, Grid, List, Filter, Trash2, Download, X } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 import { 
   getFiles, 
@@ -28,6 +29,7 @@ const FileManager = () => {
   const [selectedFileType, setSelectedFileType] = useState<string>("all");
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
   const [fileStats, setFileStats] = useState<any>(null);
+  const [selectedFileForLink, setSelectedFileForLink] = useState<FileItem | null>(null);
   const config = getAppConfig();
   const { downloads, startDownload, cancelDownload, completeDownload } = useDownloadManager();
 
@@ -135,6 +137,10 @@ const FileManager = () => {
     loadFileStats();
     setSelectedFiles([]);
     toast.success(`${deletedCount} files deleted successfully`);
+  };
+
+  const handleGenerateLink = (file: FileItem) => {
+    setSelectedFileForLink(file);
   };
 
   const toggleFileSelection = (id: string) => {
@@ -288,17 +294,39 @@ const FileManager = () => {
                   onDownload={handleDownload}
                   onView={handleView}
                   onDelete={handleDelete}
+                  onGenerateLink={handleGenerateLink}
                   selectedFiles={selectedFiles}
                   onToggleSelection={toggleFileSelection}
                 />
               ) : (
                 <div className="text-center py-12">
                   <p className="text-muted-foreground">
-                    {files.length === 0 ? "No files uploaded yet" : "No files match your search criteria"}
+                    {files.length === 0 ? "Belum ada file yang diunggah" : "Tidak ada file yang sesuai dengan kriteria pencarian"}
                   </p>
                 </div>
               )}
             </div>
+
+            {/* Download Link Generator Modal */}
+            {selectedFileForLink && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                <div className="bg-background rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+                  <div className="flex justify-between items-center p-4 border-b">
+                    <h3 className="text-lg font-semibold">Generator Tautan Unduhan</h3>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => setSelectedFileForLink(null)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="p-4">
+                    <DownloadLinkGenerator file={selectedFileForLink} />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -318,3 +346,5 @@ const FileManager = () => {
 };
 
 export default FileManager;
+
+}

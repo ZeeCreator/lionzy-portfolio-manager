@@ -1,46 +1,64 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Copy, Link, ExternalLink, QrCode } from "lucide-react";
+import { Copy, Link, ExternalLink, QrCode, Trash2 } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 import { FileItem } from "@/types";
+import { 
+  createDownloadLink, 
+  getDownloadLinksByFileId, 
+  deleteDownloadLink 
+} from "@/utils/downloadLinkService";
 
 interface DownloadLinkGeneratorProps {
   file: FileItem;
 }
 
 export function DownloadLinkGenerator({ file }: DownloadLinkGeneratorProps) {
-  const [downloadLink, setDownloadLink] = useState<string>("");
+  const [downloadLinks, setDownloadLinks] = useState<any[]>([]);
 
-  const generateDownloadLink = () => {
-    const baseUrl = window.location.origin;
-    const link = `${baseUrl}/download/${file.id}`;
-    setDownloadLink(link);
-    toast.success("Tautan unduhan telah dibuat!");
+  useEffect(() => {
+    loadDownloadLinks();
+  }, [file.id]);
+
+  const loadDownloadLinks = () => {
+    const links = getDownloadLinksByFileId(file.id);
+    setDownloadLinks(links);
   };
 
-  const copyToClipboard = async () => {
-    if (!downloadLink) return;
-    
+  const generateDownloadLink = () => {
+    const newLink = createDownloadLink(file.id, file.name);
+    loadDownloadLinks();
+    toast.success("Tautan unduhan telah dibuat dan disimpan!");
+  };
+
+  const copyToClipboard = async (url: string) => {
     try {
-      await navigator.clipboard.writeText(downloadLink);
+      await navigator.clipboard.writeText(url);
       toast.success("Tautan disalin ke clipboard!");
     } catch (error) {
       toast.error("Gagal menyalin tautan");
     }
   };
 
-  const openInNewTab = () => {
-    if (!downloadLink) return;
-    window.open(downloadLink, '_blank');
+  const openInNewTab = (url: string) => {
+    window.open(url, '_blank');
   };
 
-  const generateQRCode = () => {
-    if (!downloadLink) return;
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(downloadLink)}`;
+  const generateQRCode = (url: string) => {
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}`;
     window.open(qrUrl, '_blank');
+  };
+
+  const handleDeleteLink = (linkId: string) => {
+    if (deleteDownloadLink(linkId)) {
+      loadDownloadLinks();
+      toast.success("Tautan berhasil dihapus!");
+    } else {
+      toast.error("Gagal menghapus tautan");
+    }
   };
 
   return (
@@ -57,45 +75,49 @@ export function DownloadLinkGenerator({ file }: DownloadLinkGeneratorProps) {
             Buat tautan unduhan yang dapat dibagikan untuk file: <strong>{file.name}</strong>
           </p>
           
-          {!downloadLink ? (
-            <Button onClick={generateDownloadLink} className="w-full">
-              <Link className="h-4 w-4 mr-2" />
-              Buat Tautan Unduhan
-            </Button>
-          ) : (
-            <div className="space-y-3">
-              <div className="flex gap-2">
-                <Input 
-                  value={downloadLink} 
-                  readOnly 
-                  className="flex-1"
-                />
-                <Button variant="outline" size="sm" onClick={copyToClipboard}>
-                  <Copy className="h-4 w-4" />
-                </Button>
-                <Button variant="outline" size="sm" onClick={openInNewTab}>
-                  <ExternalLink className="h-4 w-4" />
-                </Button>
-                <Button variant="outline" size="sm" onClick={generateQRCode}>
-                  <QrCode className="h-4 w-4" />
-                </Button>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-2">
-                <Button variant="outline" size="sm" onClick={copyToClipboard}>
-                  <Copy className="h-4 w-4 mr-1" />
-                  Salin
-                </Button>
-                <Button variant="outline" size="sm" onClick={generateQRCode}>
-                  <QrCode className="h-4 w-4 mr-1" />
-                  QR Code
-                </Button>
-              </div>
-              
-              <p className="text-xs text-muted-foreground">
-                Tautan ini dapat dibagikan kepada siapa saja untuk mengunduh file.
-              </p>
+          <Button onClick={generateDownloadLink} className="w-full">
+            <Link className="h-4 w-4 mr-2" />
+            Buat Tautan Unduhan Baru
+          </Button>
+
+          {downloadLinks.length > 0 && (
+            <div className="space-y-3 mt-4">
+              <h4 className="font-medium">Tautan yang Tersimpan:</h4>
+              {downloadLinks.map((link) => (
+                <div key={link.id} className="space-y-2 p-3 border rounded-lg">
+                  <div className="flex gap-2">
+                    <Input 
+                      value={link.url} 
+                      readOnly 
+                      className="flex-1"
+                    />
+                    <Button variant="outline" size="sm" onClick={() => copyToClipboard(link.url)}>
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => openInNewTab(link.url)}>
+                      <ExternalLink className="h-4 w-4" />
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => generateQRCode(link.url)}>
+                      <QrCode className="h-4 w-4" />
+                    </Button>
+                    <Button variant="destructive" size="sm" onClick={() => handleDeleteLink(link.id)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  
+                  <div className="text-xs text-muted-foreground">
+                    <p>Dibuat: {new Date(link.createdAt).toLocaleDateString('id-ID')}</p>
+                    <p>Klik: {link.clicks}</p>
+                  </div>
+                </div>
+              ))}
             </div>
+          )}
+
+          {downloadLinks.length === 0 && (
+            <p className="text-xs text-muted-foreground text-center py-4">
+              Belum ada tautan unduhan yang dibuat untuk file ini.
+            </p>
           )}
         </div>
       </CardContent>
