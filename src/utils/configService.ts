@@ -1,4 +1,3 @@
-
 import { AppConfig, FeatureConfig } from "@/types/config";
 
 const CONFIG_STORAGE_KEY = "lionzy_app_config";
@@ -6,38 +5,44 @@ const CONFIG_STORAGE_KEY = "lionzy_app_config";
 const defaultFeatures: FeatureConfig[] = [
   {
     id: "projects",
-    name: "Project Management",
-    description: "Manage and showcase your projects",
+    name: "Pengelolaan Proyek",
+    description: "Kelola dan tampilkan proyek Anda",
     enabled: true,
   },
   {
     id: "file-manager",
-    name: "File Manager",
-    description: "Upload, manage, and share files",
+    name: "Pengelola File",
+    description: "Unggah, kelola, dan bagikan file",
     enabled: true,
   },
   {
     id: "short-links",
-    name: "Short Link Generator",
-    description: "Create and manage short links",
+    name: "Generator Tautan Pendek",
+    description: "Buat dan kelola tautan pendek",
     enabled: true,
   },
   {
     id: "education-roadmap",
-    name: "Education Roadmap",
-    description: "Display learning progress and roadmap",
+    name: "Peta Jalan Pendidikan",
+    description: "Tampilkan kemajuan belajar dan peta jalan",
     enabled: true,
   },
   {
     id: "contact-form",
-    name: "Contact Form",
-    description: "Enable contact form functionality",
+    name: "Formulir Kontak",
+    description: "Aktifkan fungsi formulir kontak",
     enabled: true,
   },
   {
     id: "animations",
-    name: "Page Animations",
-    description: "Enable various page animations",
+    name: "Animasi Halaman",
+    description: "Aktifkan berbagai animasi halaman",
+    enabled: true,
+  },
+  {
+    id: "theme-toggle",
+    name: "Pengalih Tema",
+    description: "Aktifkan pengalih tema gelap/terang/otomatis",
     enabled: true,
   },
 ];
@@ -47,8 +52,8 @@ const defaultConfig: AppConfig = {
     downloadEnabled: true,
     paidDownloadsEnabled: true,
     sourceCodeLinksEnabled: true,
-    downloadButtonText: "Download",
-    buyButtonText: "Buy Now",
+    downloadButtonText: "Unduh",
+    buyButtonText: "Beli Sekarang",
   },
   fileManager: {
     uploadEnabled: true,
@@ -63,7 +68,7 @@ const defaultConfig: AppConfig = {
     clickTrackingEnabled: true,
     customDomainEnabled: false,
     analyticsEnabled: true,
-    defaultDomain: window.location.origin,
+    defaultDomain: typeof window !== 'undefined' ? window.location.origin : '',
   },
   animations: {
     typingAnimationEnabled: true,
@@ -72,7 +77,7 @@ const defaultConfig: AppConfig = {
     fadeInDuration: 1000,
   },
   theme: {
-    darkModeEnabled: false,
+    darkModeEnabled: true,
     autoThemeEnabled: true,
     primaryColor: "#3B82F6",
     secondaryColor: "#10B981",

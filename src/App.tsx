@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import HarisProtectedRoute from "@/components/HarisProtectedRoute";
 import Index from "./pages/Index";
 import Projects from "./pages/Projects";
 import ProjectDetail from "./pages/ProjectDetail";
@@ -19,6 +20,7 @@ import ShortLinks from "./pages/ShortLinks";
 import ShortLinkRedirect from "./pages/ShortLinkRedirect";
 import NotFound from "./pages/NotFound";
 import Configuration from "./pages/Configuration";
+import DownloadPage from "./pages/DownloadPage";
 
 // Admin Pages
 import Login from "./pages/Admin/Login";
@@ -27,9 +29,7 @@ import AdminProjects from "./pages/Admin/Projects";
 import Skills from "./pages/Admin/Skills";
 import Messages from "./pages/Admin/Messages";
 import { UserProvider } from "./contexts/UserContext";
-
-import HarisLogin from "./pages/Auth/HarisLogin";
-import HarisProtectedRoute from "./components/HarisProtectedRoute";
+import { ThemeProvider } from "./contexts/ThemeContext";
 
 const queryClient = new QueryClient();
 
@@ -38,181 +38,185 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <UserProvider>
-        <BrowserRouter>
-          <Routes>
-            {/* Short Link Redirect Route - Must be before other routes */}
-            <Route path="/s/:shortCode" element={<ShortLinkRedirect />} />
+      <ThemeProvider>
+        <UserProvider>
+          <BrowserRouter>
+            <Routes>
+              {/* Short Link Redirect Route - Must be before other routes */}
+              <Route path="/s/:shortCode" element={<ShortLinkRedirect />} />
 
-            {/* Public Routes */}
-            <Route
-              path="/"
-              element={
-                <div className="flex flex-col min-h-screen">
-                  <Header />
-                  <main className="flex-grow pt-16">
-                    <Index />
-                  </main>
-                  <Footer />
-                </div>
-              }
-            />
-            <Route
-              path="/projects"
-              element={
-                <div className="flex flex-col min-h-screen">
-                  <Header />
-                  <main className="flex-grow pt-16">
-                    <Projects />
-                  </main>
-                  <Footer />
-                </div>
-              }
-            />
-            <Route
-              path="/projects/:id"
-              element={
-                <div className="flex flex-col min-h-screen">
-                  <Header />
-                  <main className="flex-grow pt-16">
-                    <ProjectDetail />
-                  </main>
-                  <Footer />
-                </div>
-              }
-            />
-            <Route
-              path="/about"
-              element={
-                <div className="flex flex-col min-h-screen">
-                  <Header />
-                  <main className="flex-grow pt-16">
-                    <About />
-                  </main>
-                  <Footer />
-                </div>
-              }
-            />
-            <Route
-              path="/contact"
-              element={
-                <div className="flex flex-col min-h-screen">
-                  <Header />
-                  <main className="flex-grow pt-16">
-                    <Contact />
-                  </main>
-                  <Footer />
-                </div>
-              }
-            />
+              {/* Download Page Route */}
+              <Route path="/download/:id" element={<DownloadPage />} />
 
-            {/* Protected Routes - Files and Short Links */}
-            <Route
-              path="/files"
-              element={
-                <HarisProtectedRoute>
+              {/* Public Routes */}
+              <Route
+                path="/"
+                element={
                   <div className="flex flex-col min-h-screen">
                     <Header />
                     <main className="flex-grow pt-16">
-                      <FileManager />
+                      <Index />
                     </main>
                     <Footer />
                   </div>
-                </HarisProtectedRoute>
-              }
-            />
-            <Route
-              path="/shortlinks"
-              element={
-                <HarisProtectedRoute>
+                }
+              />
+              <Route
+                path="/projects"
+                element={
                   <div className="flex flex-col min-h-screen">
                     <Header />
                     <main className="flex-grow pt-16">
-                      <ShortLinks />
+                      <Projects />
                     </main>
                     <Footer />
                   </div>
-                </HarisProtectedRoute>
-              }
-            />
+                }
+              />
+              <Route
+                path="/projects/:id"
+                element={
+                  <div className="flex flex-col min-h-screen">
+                    <Header />
+                    <main className="flex-grow pt-16">
+                      <ProjectDetail />
+                    </main>
+                    <Footer />
+                  </div>
+                }
+              />
+              <Route
+                path="/about"
+                element={
+                  <div className="flex flex-col min-h-screen">
+                    <Header />
+                    <main className="flex-grow pt-16">
+                      <About />
+                    </main>
+                    <Footer />
+                  </div>
+                }
+              />
+              <Route
+                path="/contact"
+                element={
+                  <div className="flex flex-col min-h-screen">
+                    <Header />
+                    <main className="flex-grow pt-16">
+                      <Contact />
+                    </main>
+                    <Footer />
+                  </div>
+                }
+              />
 
-            <Route
-              path="/configuration"
-              element={
-                <ProtectedRoute>
-                  <div className="flex flex-col min-h-screen">
-                    <Header />
-                    <main className="flex-grow pt-16">
-                      <Configuration />
-                    </main>
-                    <Footer />
-                  </div>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/settings"
-              element={
-                <ProtectedRoute>
-                  <div className="flex flex-col min-h-screen">
-                    <Header />
-                    <main className="flex-grow pt-16">
-                      <Settings />
-                    </main>
-                    <Footer />
-                  </div>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <div className="flex flex-col min-h-screen">
-                    <Header />
-                    <main className="flex-grow pt-16">
-                      <Dashboard />
-                    </main>
-                    <Footer />
-                  </div>
-                </ProtectedRoute>
-              }
-            />
+              {/* Protected Routes - Files and Short Links */}
+              <Route
+                path="/files"
+                element={
+                  <HarisProtectedRoute>
+                    <div className="flex flex-col min-h-screen">
+                      <Header />
+                      <main className="flex-grow pt-16">
+                        <FileManager />
+                      </main>
+                      <Footer />
+                    </div>
+                  </HarisProtectedRoute>
+                }
+              />
+              <Route
+                path="/shortlinks"
+                element={
+                  <HarisProtectedRoute>
+                    <div className="flex flex-col min-h-screen">
+                      <Header />
+                      <main className="flex-grow pt-16">
+                        <ShortLinks />
+                      </main>
+                      <Footer />
+                    </div>
+                  </HarisProtectedRoute>
+                }
+              />
 
-            {/* Auth Routes */}
-            <Route path="/admin/login" element={<Login />} />
-            <Route path="/haris/login" element={<HarisLogin />} />
-            
-            <Route
-              path="/admin"
-              element={
-                <ProtectedRoute>
-                  <AdminDashboard />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<AdminProjects />} />
-              <Route path="projects" element={<AdminProjects />} />
-              <Route path="skills" element={<Skills />} />
-              <Route path="messages" element={<Messages />} />
-            </Route>
+              <Route
+                path="/configuration"
+                element={
+                  <ProtectedRoute>
+                    <div className="flex flex-col min-h-screen">
+                      <Header />
+                      <main className="flex-grow pt-16">
+                        <Configuration />
+                      </main>
+                      <Footer />
+                    </div>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/settings"
+                element={
+                  <ProtectedRoute>
+                    <div className="flex flex-col min-h-screen">
+                      <Header />
+                      <main className="flex-grow pt-16">
+                        <Settings />
+                      </main>
+                      <Footer />
+                    </div>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <div className="flex flex-col min-h-screen">
+                      <Header />
+                      <main className="flex-grow pt-16">
+                        <Dashboard />
+                      </main>
+                      <Footer />
+                    </div>
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* 404 Route */}
-            <Route
-              path="*"
-              element={
-                <div className="flex flex-col min-h-screen">
-                  <Header />
-                  <main className="flex-grow pt-16">
-                    <NotFound />
-                  </main>
-                  <Footer />
-                </div>
-              }
-            />
-          </Routes>
-        </BrowserRouter>
-      </UserProvider>
+              {/* Auth Routes */}
+              <Route path="/admin/login" element={<Login />} />
+              
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute>
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<AdminProjects />} />
+                <Route path="projects" element={<AdminProjects />} />
+                <Route path="skills" element={<Skills />} />
+                <Route path="messages" element={<Messages />} />
+              </Route>
+
+              {/* 404 Route */}
+              <Route
+                path="*"
+                element={
+                  <div className="flex flex-col min-h-screen">
+                    <Header />
+                    <main className="flex-grow pt-16">
+                      <NotFound />
+                    </main>
+                    <Footer />
+                  </div>
+                }
+              />
+            </Routes>
+          </BrowserRouter>
+        </UserProvider>
+      </ThemeProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

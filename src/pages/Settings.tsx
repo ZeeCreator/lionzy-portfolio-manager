@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { updateSettings, getSettings } from "@/utils/settingsService";
 import { SiteSettings, EducationItem } from "@/types";
@@ -10,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Trash2, Edit, Save } from "lucide-react";
+import { useTheme } from "@/contexts/ThemeContext";
+import { Sun, Moon, Monitor } from "lucide-react";
 
 const Settings = () => {
   const [settings, setSettings] = useState<SiteSettings>(getSettings());
@@ -21,6 +22,7 @@ const Settings = () => {
     category: "",
     completed: false,
   });
+  const { theme, setTheme } = useTheme();
 
   useEffect(() => {
     const storedSettings = getSettings();
@@ -106,9 +108,9 @@ const Settings = () => {
     <div className="min-h-screen">
       <section className="py-20 px-6 md:px-12 bg-secondary/50">
         <div className="container">
-          <h1 className="text-4xl font-bold">Settings</h1>
+          <h1 className="text-4xl font-bold">Pengaturan</h1>
           <p className="text-muted-foreground mt-2">
-            Customize your portfolio website
+            Sesuaikan situs web portofolio Anda
           </p>
         </div>
       </section>
@@ -117,23 +119,24 @@ const Settings = () => {
         <div className="container">
           <form onSubmit={handleSubmit} className="max-w-4xl mx-auto">
             <Tabs defaultValue="general" className="w-full">
-              <TabsList className="grid w-full grid-cols-5">
-                <TabsTrigger value="general">General</TabsTrigger>
-                <TabsTrigger value="social">Social</TabsTrigger>
-                <TabsTrigger value="education">Education</TabsTrigger>
-                <TabsTrigger value="features">Features</TabsTrigger>
-                <TabsTrigger value="appearance">Appearance</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-6">
+                <TabsTrigger value="general">Umum</TabsTrigger>
+                <TabsTrigger value="social">Sosial</TabsTrigger>
+                <TabsTrigger value="education">Pendidikan</TabsTrigger>
+                <TabsTrigger value="features">Fitur</TabsTrigger>
+                <TabsTrigger value="appearance">Tampilan</TabsTrigger>
+                <TabsTrigger value="theme">Tema</TabsTrigger>
               </TabsList>
 
               <TabsContent value="general" className="space-y-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle>General Settings</CardTitle>
+                    <CardTitle>Pengaturan Umum</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="siteName">Site Name</Label>
+                        <Label htmlFor="siteName">Nama Situs</Label>
                         <Input
                           id="siteName"
                           name="siteName"
@@ -144,7 +147,7 @@ const Settings = () => {
                       </div>
                       
                       <div className="space-y-2">
-                        <Label htmlFor="ownerName">Your Name</Label>
+                        <Label htmlFor="ownerName">Nama Anda</Label>
                         <Input
                           id="ownerName"
                           name="ownerName"
@@ -156,7 +159,7 @@ const Settings = () => {
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="aboutText">About Text</Label>
+                      <Label htmlFor="aboutText">Teks Tentang</Label>
                       <Textarea
                         id="aboutText"
                         name="aboutText"
@@ -168,7 +171,7 @@ const Settings = () => {
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="contactEmail">Contact Email</Label>
+                      <Label htmlFor="contactEmail">Email Kontak</Label>
                       <Input
                         id="contactEmail"
                         name="contactEmail"
@@ -185,7 +188,7 @@ const Settings = () => {
               <TabsContent value="social" className="space-y-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Social Media & Donation</CardTitle>
+                    <CardTitle>Sosial Media & Donasi</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -236,7 +239,7 @@ const Settings = () => {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
                       <div className="space-y-2">
-                        <Label htmlFor="saweria.username">Saweria Username</Label>
+                        <Label htmlFor="saweria.username">Username Saweria</Label>
                         <Input
                           id="saweria.username"
                           name="saweria.username"
@@ -246,7 +249,7 @@ const Settings = () => {
                       </div>
                       
                       <div className="space-y-2">
-                        <Label htmlFor="saweria.url">Saweria URL</Label>
+                        <Label htmlFor="saweria.url">URL Saweria</Label>
                         <Input
                           id="saweria.url"
                           name="saweria.url"
@@ -263,7 +266,7 @@ const Settings = () => {
               <TabsContent value="education" className="space-y-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Education Roadmap</CardTitle>
+                    <CardTitle>Rencana Pendidikan</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="flex items-center space-x-2">
@@ -275,32 +278,32 @@ const Settings = () => {
                         onChange={handleInputChange}
                         className="rounded"
                       />
-                      <Label htmlFor="showEducationRoadmap">Show Education Roadmap</Label>
+                      <Label htmlFor="showEducationRoadmap">Tampilkan Rencana Pendidikan</Label>
                     </div>
 
                     {settings.showEducationRoadmap && (
                       <div className="space-y-4">
-                        <h3 className="text-lg font-medium">Add New Item</h3>
+                        <h3 className="text-lg font-medium">Tambahkan Item Baru</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <Input
-                            placeholder="Title"
+                            placeholder="Judul"
                             value={newEducationItem.title || ""}
                             onChange={(e) => setNewEducationItem(prev => ({ ...prev, title: e.target.value }))}
                           />
                           <Input
-                            placeholder="Category"
+                            placeholder="Kategori"
                             value={newEducationItem.category || ""}
                             onChange={(e) => setNewEducationItem(prev => ({ ...prev, category: e.target.value }))}
                           />
                         </div>
                         <Textarea
-                          placeholder="Description"
+                          placeholder="Deskripsi"
                           value={newEducationItem.description || ""}
                           onChange={(e) => setNewEducationItem(prev => ({ ...prev, description: e.target.value }))}
                         />
                         <div className="flex items-center space-x-4">
                           <div className="space-y-2">
-                            <Label>Progress (%)</Label>
+                            <Label>Progres (%)</Label>
                             <Input
                               type="number"
                               min="0"
@@ -316,16 +319,16 @@ const Settings = () => {
                               onChange={(e) => setNewEducationItem(prev => ({ ...prev, completed: e.target.checked }))}
                               className="rounded"
                             />
-                            <Label>Completed</Label>
+                            <Label>Selesai</Label>
                           </div>
                           <Button type="button" onClick={addEducationItem}>
                             <Plus className="h-4 w-4 mr-2" />
-                            Add Item
+                            Tambahkan Item
                           </Button>
                         </div>
 
                         <div className="space-y-4">
-                          <h3 className="text-lg font-medium">Current Items</h3>
+                          <h3 className="text-lg font-medium">Item Saat Ini</h3>
                           {settings.educationItems.map((item) => (
                             <div key={item.id} className="border rounded-lg p-4 space-y-2">
                               {editingEducation === item.id ? (
@@ -357,7 +360,7 @@ const Settings = () => {
                                         onChange={(e) => handleEducationItemChange(item.id, 'completed', e.target.checked)}
                                         className="rounded"
                                       />
-                                      <Label>Completed</Label>
+                                      <Label>Selesai</Label>
                                     </div>
                                     <Button size="sm" onClick={() => setEditingEducation(null)}>
                                       <Save className="h-4 w-4" />
@@ -370,7 +373,7 @@ const Settings = () => {
                                     <h4 className="font-medium">{item.title}</h4>
                                     <p className="text-sm text-muted-foreground">{item.category}</p>
                                     <p className="text-sm">{item.description}</p>
-                                    <p className="text-sm">Progress: {item.progress}% {item.completed && "(Completed)"}</p>
+                                    <p className="text-sm">Progres: {item.progress}% {item.completed && "(Selesai)"}</p>
                                   </div>
                                   <div className="flex space-x-2">
                                     <Button size="sm" variant="outline" onClick={() => setEditingEducation(item.id)}>
@@ -394,12 +397,12 @@ const Settings = () => {
               <TabsContent value="features" className="space-y-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Feature Configuration</CardTitle>
+                    <CardTitle>Konfigurasi Fitur</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-4">
-                        <h3 className="text-lg font-medium">Project Features</h3>
+                        <h3 className="text-lg font-medium">Fitur Proyek</h3>
                         <div className="space-y-2">
                           <div className="flex items-center justify-between">
                             <Label>Enable Download Feature</Label>
@@ -469,11 +472,11 @@ const Settings = () => {
               <TabsContent value="appearance" className="space-y-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Appearance Settings</CardTitle>
+                    <CardTitle>Pengaturan Tampilan</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="backgroundImage">Background Image</Label>
+                      <Label htmlFor="backgroundImage">Gambar Latar Belakang</Label>
                       <Input
                         id="backgroundImage"
                         name="backgroundImage"
@@ -484,15 +487,68 @@ const Settings = () => {
                     </div>
                     
                     <div className="space-y-2">
-                      <Label>Theme Settings</Label>
+                      <Label>Pengaturan Tema</Label>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="flex items-center justify-between">
-                          <Label>Dark Mode</Label>
+                          <Label>Mode Gelap</Label>
                           <input type="checkbox" className="rounded" />
                         </div>
                         <div className="flex items-center justify-between">
-                          <Label>Auto Theme</Label>
+                          <Label>Auto Tema</Label>
                           <input type="checkbox" defaultChecked className="rounded" />
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="theme" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Pengaturan Tema</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="space-y-4">
+                      <Label className="text-base font-medium">Pilih Tema</Label>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div 
+                          className={`p-4 border rounded-lg cursor-pointer transition-all ${theme === 'light' ? 'border-primary bg-primary/5' : 'border-border'}`}
+                          onClick={() => setTheme('light')}
+                        >
+                          <div className="flex items-center space-x-2">
+                            <Sun className="h-5 w-5" />
+                            <span className="font-medium">Terang</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Tema terang untuk penggunaan siang hari
+                          </p>
+                        </div>
+                        
+                        <div 
+                          className={`p-4 border rounded-lg cursor-pointer transition-all ${theme === 'dark' ? 'border-primary bg-primary/5' : 'border-border'}`}
+                          onClick={() => setTheme('dark')}
+                        >
+                          <div className="flex items-center space-x-2">
+                            <Moon className="h-5 w-5" />
+                            <span className="font-medium">Gelap</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Tema gelap untuk penggunaan malam hari
+                          </p>
+                        </div>
+                        
+                        <div 
+                          className={`p-4 border rounded-lg cursor-pointer transition-all ${theme === 'auto' ? 'border-primary bg-primary/5' : 'border-border'}`}
+                          onClick={() => setTheme('auto')}
+                        >
+                          <div className="flex items-center space-x-2">
+                            <Monitor className="h-5 w-5" />
+                            <span className="font-medium">Otomatis</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Mengikuti pengaturan sistem
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -503,7 +559,7 @@ const Settings = () => {
 
             <div className="mt-8 flex justify-end">
               <Button type="submit" className="btn-primary">
-                Save All Settings
+                Simpan Semua Pengaturan
               </Button>
             </div>
           </form>
@@ -514,3 +570,5 @@ const Settings = () => {
 };
 
 export default Settings;
+
+</edits_to_apply>
