@@ -1,8 +1,9 @@
 
 import { FileItem } from "@/types";
-import { File, Download, Eye, Trash2, Link } from "lucide-react";
+import { File, Download, Eye, Trash2, Link, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { toast } from "@/components/ui/sonner";
 
 interface FileGridProps {
   files: FileItem[];
@@ -29,6 +30,15 @@ export function FileGrid({
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const copyDownloadLink = async (file: FileItem) => {
+    try {
+      await navigator.clipboard.writeText(file.url);
+      toast.success(`Tautan unduhan ${file.name} disalin ke clipboard!`);
+    } catch (error) {
+      toast.error("Gagal menyalin tautan unduhan");
+    }
   };
 
   return (
@@ -70,6 +80,10 @@ export function FileGrid({
               <Button size="sm" onClick={() => onDownload(file)}>
                 <Download className="h-3 w-3 mr-1" />
                 Unduh
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => copyDownloadLink(file)}>
+                <Copy className="h-3 w-3 mr-1" />
+                Copy
               </Button>
               {onGenerateLink && (
                 <Button size="sm" variant="secondary" onClick={() => onGenerateLink(file)}>
