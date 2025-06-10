@@ -39,20 +39,20 @@ const defaultEducationItems: EducationItem[] = [
 ];
 
 const defaultSettings: SiteSettings = {
-  siteName: "Lionzy Portfolio",
-  ownerName: "Lionzy",
+  siteName: "Z-PORTFOLIO",
+  ownerName: "ZeroTzyID",
   aboutText: "I'm a passionate developer specializing in creating beautiful and functional websites and applications. With a focus on user experience and clean code, I deliver high-quality digital solutions.",
-  contactEmail: "hello@example.com",
+  contactEmail: "zeetzy@gmail.com",
   social: {
-    github: "https://github.com/",
+    github: "https://github.com/ZeeCreator",
     twitter: "https://twitter.com/",
     linkedin: "https://linkedin.com/in/",
-    instagram: "https://instagram.com/",
+    instagram: "https://instagram.com/zerotzy.id",
   },
-  backgroundImage: "mountain-1.jpg",
+  backgroundImage: "https://k.top4top.io/p_3448ixnnv1.png",
   saweria: {
-    username: "lionzy",
-    url: "https://saweria.co/lionzy",
+    username: "zerotzyid",
+    url: "https://saweria.co/zerotzyid",
   },
   showEducationRoadmap: true,
   educationItems: defaultEducationItems,
