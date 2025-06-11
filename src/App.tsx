@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -26,6 +27,7 @@ import DownloadPage from "./pages/DownloadPage";
 import Login from "./pages/Admin/Login";
 import AdminDashboard from "./pages/Admin/Dashboard";
 import AdminProjects from "./pages/Admin/Projects";
+import AddProject from "./pages/Admin/AddProject";
 import Skills from "./pages/Admin/Skills";
 import Messages from "./pages/Admin/Messages";
 import { UserProvider } from "./contexts/UserContext";
@@ -196,6 +198,7 @@ const App = () => (
               >
                 <Route index element={<AdminProjects />} />
                 <Route path="projects" element={<AdminProjects />} />
+                <Route path="projects/add" element={<AddProject />} />
                 <Route path="skills" element={<Skills />} />
                 <Route path="messages" element={<Messages />} />
               </Route>

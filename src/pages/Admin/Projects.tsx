@@ -1,6 +1,8 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { Plus, Pencil, Trash2, Check, X } from "lucide-react";
-import { getProjects, createProject, updateProject, deleteProject } from "@/utils/projectService";
+import { Link } from "react-router-dom";
+import { getProjects, updateProject, deleteProject } from "@/utils/projectService";
 import { Project } from "@/types";
 import { toast } from "@/components/ui/sonner";
 import { Input } from "@/components/ui/input";
@@ -19,12 +21,10 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 
 const Projects = () => {
   const [projects, setProjects] = useState<Project[]>([]);
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
@@ -51,22 +51,6 @@ const Projects = () => {
     setProjects(data);
   };
 
-  const resetForm = useCallback(() => {
-    setFormData({
-      title: "",
-      description: "",
-      imageUrl: "/placeholder.svg",
-      tags: "",
-      githubUrl: "",
-      liveUrl: "",
-      featured: false,
-      downloadType: 'free',
-      downloadUrl: "",
-      price: 0,
-      sourceVisible: true,
-    });
-  }, []);
-
   const handleChange = useCallback((
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
@@ -85,29 +69,6 @@ const Projects = () => {
       }
     });
   }, []);
-
-  const handleAddSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    const newProject = createProject({
-      title: formData.title,
-      description: formData.description,
-      imageUrl: formData.imageUrl || "/placeholder.svg",
-      tags: formData.tags.split(",").map((tag) => tag.trim()),
-      githubUrl: formData.githubUrl || undefined,
-      liveUrl: formData.liveUrl || undefined,
-      featured: formData.featured,
-      downloadType: formData.downloadType,
-      downloadUrl: formData.downloadUrl || undefined,
-      price: formData.downloadType === 'paid' ? formData.price : undefined,
-      sourceVisible: formData.sourceVisible,
-    });
-    
-    setProjects((prev) => [...prev, newProject]);
-    toast.success("Project added successfully!");
-    setIsAddDialogOpen(false);
-    resetForm();
-  };
 
   const handleEditSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -330,16 +291,10 @@ const Projects = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Projects</h1>
-        <button
-          className="btn-primary"
-          onClick={() => {
-            resetForm();
-            setIsAddDialogOpen(true);
-          }}
-        >
+        <Link to="/admin/projects/add" className="btn-primary">
           <Plus className="h-4 w-4 mr-2" />
           Add Project
-        </button>
+        </Link>
       </div>
 
       <div className="glass-card rounded-xl p-6">
@@ -412,30 +367,6 @@ const Projects = () => {
           </TableBody>
         </Table>
       </div>
-
-      {/* Add Project Dialog */}
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="sm:max-w-[625px] max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Add New Project</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleAddSubmit}>
-            <ProjectForm />
-            <div className="flex justify-end space-x-2 pt-4">
-              <button
-                type="button"
-                className="btn-outline"
-                onClick={() => setIsAddDialogOpen(false)}
-              >
-                Cancel
-              </button>
-              <button type="submit" className="btn-primary">
-                Add Project
-              </button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
 
       {/* Edit Project Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
