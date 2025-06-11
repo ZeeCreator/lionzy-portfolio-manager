@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Plus, Pencil, Trash2, Check, X } from "lucide-react";
 import { getProjects, createProject, updateProject, deleteProject } from "@/utils/projectService";
 import { Project } from "@/types";
@@ -52,7 +51,7 @@ const Projects = () => {
     setProjects(data);
   };
 
-  const resetForm = () => {
+  const resetForm = useCallback(() => {
     setFormData({
       title: "",
       description: "",
@@ -66,24 +65,26 @@ const Projects = () => {
       price: 0,
       sourceVisible: true,
     });
-  };
+  }, []);
 
-  const handleChange = (
+  const handleChange = useCallback((
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value, type } = e.target as HTMLInputElement;
     
-    if (type === "checkbox") {
-      setFormData((prev) => ({
-        ...prev,
-        [name]: (e.target as HTMLInputElement).checked,
-      }));
-    } else if (name === "price") {
-      setFormData((prev) => ({ ...prev, [name]: parseFloat(value) || 0 }));
-    } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
-    }
-  };
+    setFormData((prev) => {
+      if (type === "checkbox") {
+        return {
+          ...prev,
+          [name]: (e.target as HTMLInputElement).checked,
+        };
+      } else if (name === "price") {
+        return { ...prev, [name]: parseFloat(value) || 0 };
+      } else {
+        return { ...prev, [name]: value };
+      }
+    });
+  }, []);
 
   const handleAddSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -186,6 +187,7 @@ const Projects = () => {
             value={formData.title}
             onChange={handleChange}
             required
+            autoComplete="off"
           />
         </div>
         <div className="space-y-2">
@@ -196,6 +198,7 @@ const Projects = () => {
             value={formData.imageUrl}
             onChange={handleChange}
             placeholder="/placeholder.svg"
+            autoComplete="off"
           />
         </div>
       </div>
@@ -221,6 +224,7 @@ const Projects = () => {
           onChange={handleChange}
           placeholder="React, TypeScript, Tailwind"
           required
+          autoComplete="off"
         />
       </div>
       
@@ -233,6 +237,7 @@ const Projects = () => {
             value={formData.githubUrl}
             onChange={handleChange}
             placeholder="https://github.com/..."
+            autoComplete="off"
           />
         </div>
         <div className="space-y-2">
@@ -243,6 +248,7 @@ const Projects = () => {
             value={formData.liveUrl}
             onChange={handleChange}
             placeholder="https://..."
+            autoComplete="off"
           />
         </div>
       </div>
@@ -270,6 +276,7 @@ const Projects = () => {
             value={formData.downloadUrl}
             onChange={handleChange}
             placeholder="https://github.com/user/repo/archive/main.zip"
+            autoComplete="off"
           />
         </div>
       )}
@@ -286,6 +293,7 @@ const Projects = () => {
             value={formData.price}
             onChange={handleChange}
             placeholder="29.99"
+            autoComplete="off"
           />
         </div>
       )}

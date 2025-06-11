@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/sonner";
 import { 
   Settings as SettingsIcon, 
@@ -24,11 +25,14 @@ import {
   Sun
 } from "lucide-react";
 import { getAppConfig, updateAppConfig, updateFeatureConfig } from "@/utils/configService";
+import { getSettings, updateSettings } from "@/utils/settingsService";
 import { AppConfig } from "@/types/config";
+import { SiteSettings } from "@/types";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 const Settings = () => {
   const [config, setConfig] = useState<AppConfig | null>(null);
+  const [siteSettings, setSiteSettings] = useState<SiteSettings | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -38,7 +42,9 @@ const Settings = () => {
   const loadConfig = () => {
     try {
       const appConfig = getAppConfig();
+      const settings = getSettings();
       setConfig(appConfig);
+      setSiteSettings(settings);
     } catch (error) {
       toast.error("Gagal memuat konfigurasi");
     } finally {
@@ -70,6 +76,18 @@ const Settings = () => {
     }
   };
 
+  const handleSiteSettingsUpdate = (updates: Partial<SiteSettings>) => {
+    if (!siteSettings) return;
+
+    try {
+      const updatedSettings = updateSettings(updates);
+      setSiteSettings(updatedSettings);
+      toast.success("Pengaturan berhasil diperbarui");
+    } catch (error) {
+      toast.error("Gagal memperbarui pengaturan");
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -80,7 +98,7 @@ const Settings = () => {
     );
   }
 
-  if (!config) {
+  if (!config || !siteSettings) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -108,6 +126,148 @@ const Settings = () => {
               Kelola konfigurasi dan fitur aplikasi sesuai kebutuhan Anda
             </p>
           </div>
+
+          {/* Profile & About Settings */}
+          <Card className="glass-card">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <User className="h-5 w-5" />
+                Pengaturan Profil & Tentang
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="siteName">Nama Situs</Label>
+                  <Input
+                    id="siteName"
+                    value={siteSettings.siteName}
+                    onChange={(e) => handleSiteSettingsUpdate({ siteName: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="ownerName">Nama Pemilik</Label>
+                  <Input
+                    id="ownerName"
+                    value={siteSettings.ownerName}
+                    onChange={(e) => handleSiteSettingsUpdate({ ownerName: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="displayName">Nama Tampilan</Label>
+                  <Input
+                    id="displayName"
+                    value={siteSettings.displayName}
+                    onChange={(e) => handleSiteSettingsUpdate({ displayName: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="fullName">Nama Lengkap</Label>
+                  <Input
+                    id="fullName"
+                    value={siteSettings.fullName}
+                    onChange={(e) => handleSiteSettingsUpdate({ fullName: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="profession">Profesi</Label>
+                  <Input
+                    id="profession"
+                    value={siteSettings.profession}
+                    onChange={(e) => handleSiteSettingsUpdate({ profession: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="company">Perusahaan</Label>
+                  <Input
+                    id="company"
+                    value={siteSettings.company}
+                    onChange={(e) => handleSiteSettingsUpdate({ company: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="location">Lokasi</Label>
+                  <Input
+                    id="location"
+                    value={siteSettings.location}
+                    onChange={(e) => handleSiteSettingsUpdate({ location: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="contactEmail">Email Kontak</Label>
+                  <Input
+                    id="contactEmail"
+                    type="email"
+                    value={siteSettings.contactEmail}
+                    onChange={(e) => handleSiteSettingsUpdate({ contactEmail: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phoneNumber">Nomor Telepon</Label>
+                  <Input
+                    id="phoneNumber"
+                    value={siteSettings.phoneNumber}
+                    onChange={(e) => handleSiteSettingsUpdate({ phoneNumber: e.target.value })}
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="aboutText">Tentang Saya</Label>
+                <Textarea
+                  id="aboutText"
+                  value={siteSettings.aboutText}
+                  onChange={(e) => handleSiteSettingsUpdate({ aboutText: e.target.value })}
+                  rows={4}
+                />
+              </div>
+
+              <Separator />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="github">GitHub URL</Label>
+                  <Input
+                    id="github"
+                    value={siteSettings.social.github || ''}
+                    onChange={(e) => handleSiteSettingsUpdate({ 
+                      social: { ...siteSettings.social, github: e.target.value }
+                    })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="linkedin">LinkedIn URL</Label>
+                  <Input
+                    id="linkedin"
+                    value={siteSettings.social.linkedin || ''}
+                    onChange={(e) => handleSiteSettingsUpdate({ 
+                      social: { ...siteSettings.social, linkedin: e.target.value }
+                    })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="twitter">Twitter URL</Label>
+                  <Input
+                    id="twitter"
+                    value={siteSettings.social.twitter || ''}
+                    onChange={(e) => handleSiteSettingsUpdate({ 
+                      social: { ...siteSettings.social, twitter: e.target.value }
+                    })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="instagram">Instagram URL</Label>
+                  <Input
+                    id="instagram"
+                    value={siteSettings.social.instagram || ''}
+                    onChange={(e) => handleSiteSettingsUpdate({ 
+                      social: { ...siteSettings.social, instagram: e.target.value }
+                    })}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Theme Settings */}
           <Card className="glass-card">
