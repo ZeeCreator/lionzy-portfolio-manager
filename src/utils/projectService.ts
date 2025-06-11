@@ -1,4 +1,6 @@
+
 import { Project } from "@/types";
+import { storageService } from "./storageService";
 
 const STORAGE_KEY = "lionzy_projects";
 
@@ -6,8 +8,8 @@ const STORAGE_KEY = "lionzy_projects";
 const initialProjects: Project[] = [
   {
     id: "1",
-    title: "Portfolio Website",
-    description: "A modern portfolio website built with React and Tailwind CSS.",
+    title: "Website Portfolio",
+    description: "Website portfolio modern yang dibuat dengan React dan Tailwind CSS.",
     imageUrl: "/placeholder.svg",
     tags: ["React", "Tailwind CSS", "TypeScript"],
     createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
@@ -21,8 +23,8 @@ const initialProjects: Project[] = [
   },
   {
     id: "2",
-    title: "E-commerce Dashboard",
-    description: "Admin dashboard for managing e-commerce store inventory and orders.",
+    title: "Dashboard E-commerce",
+    description: "Dashboard admin untuk mengelola inventori dan pesanan toko e-commerce.",
     imageUrl: "/placeholder.svg",
     tags: ["React", "Redux", "Material UI"],
     createdAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
@@ -35,8 +37,8 @@ const initialProjects: Project[] = [
   },
   {
     id: "3",
-    title: "Weather App",
-    description: "A beautiful weather application with 7-day forecast.",
+    title: "Aplikasi Cuaca",
+    description: "Aplikasi cuaca yang indah dengan prakiraan 7 hari.",
     imageUrl: "/placeholder.svg",
     tags: ["React", "Weather API", "Styled Components"],
     createdAt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
@@ -50,34 +52,110 @@ const initialProjects: Project[] = [
   },
 ];
 
-// Load projects from localStorage or use initial data
-export const getProjects = (): Project[] => {
-  if (typeof window === "undefined") return initialProjects;
-  
-  const storedProjects = localStorage.getItem(STORAGE_KEY);
-  if (!storedProjects) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(initialProjects));
+// Load projects from storage
+export const getProjects = async (): Promise<Project[]> => {
+  try {
+    const storedProjects = await storageService.getItem(STORAGE_KEY);
+    
+    if (!storedProjects) {
+      await storageService.setItem(STORAGE_KEY, initialProjects);
+      return initialProjects;
+    }
+    
+    // Ensure new fields exist in existing projects
+    return storedProjects.map((project: any) => ({
+      ...project,
+      downloadType: project.downloadType || 'free',
+      sourceVisible: project.sourceVisible !== undefined ? project.sourceVisible : true,
+    }));
+  } catch (error) {
+    console.error('Error loading projects:', error);
     return initialProjects;
   }
+};
+
+// Synchronous version for components that need immediate data
+export const getProjectsSync = (): Project[] => {
+  if (typeof window === "undefined") return initialProjects;
   
-  const projects = JSON.parse(storedProjects);
-  // Ensure new fields exist in existing projects
-  return projects.map((project: any) => ({
-    ...project,
-    downloadType: project.downloadType || 'free',
-    sourceVisible: project.sourceVisible !== undefined ? project.sourceVisible : true,
-  }));
+  try {
+    const storedProjects = localStorage.getItem(STORAGE_KEY);
+    if (!storedProjects) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(initialProjects));
+      return initialProjects;
+    }
+    
+    const projects = JSON.parse(storedProjects);
+    return projects.map((project: any) => ({
+      ...project,
+      downloadType: project.downloadType || 'free',
+      sourceVisible: project.sourceVisible !== undefined ? project.sourceVisible : true,
+    }));
+  } catch (error) {
+    console.error('Error loading projects sync:', error);
+    return initialProjects;
+  }
 };
 
 // Get a single project by ID
 export const getProjectById = (id: string): Project | undefined => {
-  const projects = getProjects();
+  const projects = getProjectsSync();
   return projects.find(project => project.id === id);
 };
 
 // Create a new project
-export const createProject = (project: Omit<Project, "id" | "createdAt" | "updatedAt">): Project => {
-  const projects = getProjects();
+export const createProject = async (project: Omit<Project, "id" | "createdAt" | "updatedAt">): Promise<Project> => {
+  const projects = await getProjects();
+  const newProject: Project = {
+    ...project,
+    id: Date.now().toString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    downloadType: project.downloadType || 'free',
+    sourceVisible: project.sourceVisible !== undefined ? project.sourceVisible : true,
+  };
+  
+  const updatedProjects = [...projects, newProject];
+  await storageService.setItem(STORAGE_KEY, updatedProjects);
+  
+  return newProject;
+};
+
+// Update an existing project
+export const updateProject = async (id: string, updates: Partial<Omit<Project, "id" | "createdAt" | "updatedAt">>): Promise<Project | undefined> => {
+  const projects = await getProjects();
+  const projectIndex = projects.findIndex(p => p.id === id);
+  
+  if (projectIndex === -1) return undefined;
+  
+  const updatedProject: Project = {
+    ...projects[projectIndex],
+    ...updates,
+    updatedAt: new Date().toISOString(),
+  };
+  
+  projects[projectIndex] = updatedProject;
+  await storageService.setItem(STORAGE_KEY, projects);
+  
+  return updatedProject;
+};
+
+// Delete a project
+export const deleteProject = async (id: string): Promise<boolean> => {
+  const projects = await getProjects();
+  const filteredProjects = projects.filter(p => p.id !== id);
+  
+  if (filteredProjects.length === projects.length) {
+    return false;
+  }
+  
+  await storageService.setItem(STORAGE_KEY, filteredProjects);
+  return true;
+};
+
+// Sync version for backward compatibility
+export const createProjectSync = (project: Omit<Project, "id" | "createdAt" | "updatedAt">): Project => {
+  const projects = getProjectsSync();
   const newProject: Project = {
     ...project,
     id: Date.now().toString(),
@@ -91,36 +169,4 @@ export const createProject = (project: Omit<Project, "id" | "createdAt" | "updat
   localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedProjects));
   
   return newProject;
-};
-
-// Update an existing project
-export const updateProject = (id: string, updates: Partial<Omit<Project, "id" | "createdAt" | "updatedAt">>): Project | undefined => {
-  const projects = getProjects();
-  const projectIndex = projects.findIndex(p => p.id === id);
-  
-  if (projectIndex === -1) return undefined;
-  
-  const updatedProject: Project = {
-    ...projects[projectIndex],
-    ...updates,
-    updatedAt: new Date().toISOString(),
-  };
-  
-  projects[projectIndex] = updatedProject;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(projects));
-  
-  return updatedProject;
-};
-
-// Delete a project
-export const deleteProject = (id: string): boolean => {
-  const projects = getProjects();
-  const filteredProjects = projects.filter(p => p.id !== id);
-  
-  if (filteredProjects.length === projects.length) {
-    return false;
-  }
-  
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(filteredProjects));
-  return true;
 };

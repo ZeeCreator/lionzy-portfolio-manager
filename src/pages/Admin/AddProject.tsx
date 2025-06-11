@@ -8,9 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { t } from "@/utils/translations";
 
 const AddProject = () => {
   const navigate = useNavigate();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -44,25 +46,33 @@ const AddProject = () => {
     });
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
     
-    const newProject = createProject({
-      title: formData.title,
-      description: formData.description,
-      imageUrl: formData.imageUrl || "/placeholder.svg",
-      tags: formData.tags.split(",").map((tag) => tag.trim()),
-      githubUrl: formData.githubUrl || undefined,
-      liveUrl: formData.liveUrl || undefined,
-      featured: formData.featured,
-      downloadType: formData.downloadType,
-      downloadUrl: formData.downloadUrl || undefined,
-      price: formData.downloadType === 'paid' ? formData.price : undefined,
-      sourceVisible: formData.sourceVisible,
-    });
-    
-    toast.success("Project added successfully!");
-    navigate("/admin/projects");
+    try {
+      await createProject({
+        title: formData.title,
+        description: formData.description,
+        imageUrl: formData.imageUrl || "/placeholder.svg",
+        tags: formData.tags.split(",").map((tag) => tag.trim()),
+        githubUrl: formData.githubUrl || undefined,
+        liveUrl: formData.liveUrl || undefined,
+        featured: formData.featured,
+        downloadType: formData.downloadType,
+        downloadUrl: formData.downloadUrl || undefined,
+        price: formData.downloadType === 'paid' ? formData.price : undefined,
+        sourceVisible: formData.sourceVisible,
+      });
+      
+      toast.success(t("projectAddedSuccess"));
+      navigate("/admin/projects");
+    } catch (error) {
+      console.error('Error creating project:', error);
+      toast.error("Gagal menambahkan proyek");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -71,14 +81,14 @@ const AddProject = () => {
         <Button variant="outline" onClick={() => navigate("/admin/projects")}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <h1 className="text-2xl font-bold">Add New Project</h1>
+        <h1 className="text-2xl font-bold">{t("addProject")}</h1>
       </div>
 
       <div className="glass-card rounded-xl p-6">
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="title">Title</Label>
+              <Label htmlFor="title">{t("title")}</Label>
               <Input
                 id="title"
                 name="title"
@@ -86,10 +96,11 @@ const AddProject = () => {
                 onChange={handleChange}
                 required
                 autoComplete="off"
+                disabled={isSubmitting}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="imageUrl">Image URL</Label>
+              <Label htmlFor="imageUrl">{t("imageUrl")}</Label>
               <Input
                 id="imageUrl"
                 name="imageUrl"
@@ -97,12 +108,13 @@ const AddProject = () => {
                 onChange={handleChange}
                 placeholder="/placeholder.svg"
                 autoComplete="off"
+                disabled={isSubmitting}
               />
             </div>
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
+            <Label htmlFor="description">{t("description")}</Label>
             <Textarea
               id="description"
               name="description"
@@ -110,11 +122,12 @@ const AddProject = () => {
               onChange={handleChange}
               required
               rows={3}
+              disabled={isSubmitting}
             />
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="tags">Tags (comma separated)</Label>
+            <Label htmlFor="tags">{t("tags")}</Label>
             <Input
               id="tags"
               name="tags"
@@ -123,12 +136,13 @@ const AddProject = () => {
               placeholder="React, TypeScript, Tailwind"
               required
               autoComplete="off"
+              disabled={isSubmitting}
             />
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="githubUrl">GitHub URL</Label>
+              <Label htmlFor="githubUrl">{t("githubUrl")}</Label>
               <Input
                 id="githubUrl"
                 name="githubUrl"
@@ -136,10 +150,11 @@ const AddProject = () => {
                 onChange={handleChange}
                 placeholder="https://github.com/..."
                 autoComplete="off"
+                disabled={isSubmitting}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="liveUrl">Live URL</Label>
+              <Label htmlFor="liveUrl">{t("liveUrl")}</Label>
               <Input
                 id="liveUrl"
                 name="liveUrl"
@@ -147,27 +162,29 @@ const AddProject = () => {
                 onChange={handleChange}
                 placeholder="https://..."
                 autoComplete="off"
+                disabled={isSubmitting}
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="downloadType">Download Type</Label>
+            <Label htmlFor="downloadType">{t("downloadType")}</Label>
             <select
               id="downloadType"
               name="downloadType"
               value={formData.downloadType}
               onChange={handleChange}
+              disabled={isSubmitting}
               className="w-full px-3 py-2 border border-input bg-background rounded-md"
             >
-              <option value="free">Free</option>
-              <option value="paid">Paid</option>
+              <option value="free">{t("free")}</option>
+              <option value="paid">{t("paid")}</option>
             </select>
           </div>
 
           {formData.downloadType === 'free' && (
             <div className="space-y-2">
-              <Label htmlFor="downloadUrl">Download URL</Label>
+              <Label htmlFor="downloadUrl">{t("downloadUrl")}</Label>
               <Input
                 id="downloadUrl"
                 name="downloadUrl"
@@ -175,13 +192,14 @@ const AddProject = () => {
                 onChange={handleChange}
                 placeholder="https://github.com/user/repo/archive/main.zip"
                 autoComplete="off"
+                disabled={isSubmitting}
               />
             </div>
           )}
 
           {formData.downloadType === 'paid' && (
             <div className="space-y-2">
-              <Label htmlFor="price">Price ($)</Label>
+              <Label htmlFor="price">{t("price")}</Label>
               <Input
                 id="price"
                 name="price"
@@ -192,6 +210,7 @@ const AddProject = () => {
                 onChange={handleChange}
                 placeholder="29.99"
                 autoComplete="off"
+                disabled={isSubmitting}
               />
             </div>
           )}
@@ -204,9 +223,10 @@ const AddProject = () => {
                 type="checkbox"
                 checked={formData.featured}
                 onChange={handleChange}
+                disabled={isSubmitting}
                 className="rounded"
               />
-              <Label htmlFor="featured">Featured Project</Label>
+              <Label htmlFor="featured">{t("featured")}</Label>
             </div>
             
             <div className="flex items-center space-x-2">
@@ -216,9 +236,10 @@ const AddProject = () => {
                 type="checkbox"
                 checked={formData.sourceVisible}
                 onChange={handleChange}
+                disabled={isSubmitting}
                 className="rounded"
               />
-              <Label htmlFor="sourceVisible">Show Source Code</Label>
+              <Label htmlFor="sourceVisible">{t("sourceVisible")}</Label>
             </div>
           </div>
 
@@ -227,11 +248,12 @@ const AddProject = () => {
               type="button"
               variant="outline"
               onClick={() => navigate("/admin/projects")}
+              disabled={isSubmitting}
             >
-              Cancel
+              {t("cancel")}
             </Button>
-            <Button type="submit">
-              Add Project
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? t("loading") : t("addProject")}
             </Button>
           </div>
         </form>

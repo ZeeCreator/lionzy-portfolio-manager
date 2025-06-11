@@ -1,39 +1,40 @@
 
 import { SiteSettings, EducationItem } from "@/types";
+import { storageService } from "./storageService";
 
 const STORAGE_KEY = "lionzy_settings";
 
 const defaultEducationItems: EducationItem[] = [
   {
     id: "1",
-    title: "HTML & CSS Fundamentals",
-    description: "Learn the basics of web development with HTML and CSS",
+    title: "Dasar HTML & CSS",
+    description: "Pelajari dasar-dasar pengembangan web dengan HTML dan CSS",
     progress: 100,
-    category: "Frontend Development",
+    category: "Pengembangan Frontend",
     completed: true
   },
   {
     id: "2",
     title: "JavaScript ES6+",
-    description: "Modern JavaScript features and best practices",
+    description: "Fitur JavaScript modern dan praktik terbaik",
     progress: 85,
-    category: "Frontend Development",
+    category: "Pengembangan Frontend",
     completed: false
   },
   {
     id: "3",
-    title: "React.js Framework",
-    description: "Building interactive user interfaces with React",
+    title: "Framework React.js",
+    description: "Membangun antarmuka pengguna interaktif dengan React",
     progress: 70,
-    category: "Frontend Development",
+    category: "Pengembangan Frontend",
     completed: false
   },
   {
     id: "4",
-    title: "Node.js Backend",
-    description: "Server-side JavaScript development",
+    title: "Backend Node.js",
+    description: "Pengembangan JavaScript sisi server",
     progress: 45,
-    category: "Backend Development",
+    category: "Pengembangan Backend",
     completed: false
   }
 ];
@@ -46,7 +47,7 @@ const defaultSettings: SiteSettings = {
   profession: "Full Stack Developer",
   company: "Freelancer",
   location: "Indonesia",
-  aboutText: "I'm a passionate developer specializing in creating beautiful and functional websites and applications. With a focus on user experience and clean code, I deliver high-quality digital solutions.",
+  aboutText: "Saya adalah seorang developer yang bersemangat yang mengkhususkan diri dalam menciptakan website dan aplikasi yang indah dan fungsional. Dengan fokus pada pengalaman pengguna dan kode yang bersih, saya menghadirkan solusi digital berkualitas tinggi.",
   contactEmail: "zeetzy@gmail.com",
   phoneNumber: "+62 123 456 7890",
   social: {
@@ -72,12 +73,24 @@ const defaultSettings: SiteSettings = {
 
 // Mountain background images
 export const availableBackgrounds = [
-  { id: "mountain-1.jpg", name: "Mountain Range" },
-  { id: "mountain-2.jpg", name: "Snow Peak" },
-  { id: "mountain-3.jpg", name: "Foggy Mountains" },
-  { id: "mountain-4.jpg", name: "Mountain Lake" },
-  { id: "mountain-5.jpg", name: "Mountain Sunset" },
+  { id: "mountain-1.jpg", name: "Pegunungan" },
+  { id: "mountain-2.jpg", name: "Puncak Bersalju" },
+  { id: "mountain-3.jpg", name: "Pegunungan Berkabut" },
+  { id: "mountain-4.jpg", name: "Danau Pegunungan" },
+  { id: "mountain-5.jpg", name: "Sunset Pegunungan" },
 ];
+
+// Initialize storage service with settings
+const initializeStorage = () => {
+  const settings = getSettings();
+  if (settings.serverConfig) {
+    storageService.setConfig({
+      useServerStorage: settings.serverConfig.storageType === 'json',
+      serverUrl: settings.serverConfig.serverUrl,
+      apiKey: settings.serverConfig.apiKey,
+    });
+  }
+};
 
 // Get settings from localStorage or use defaults
 export const getSettings = (): SiteSettings => {
@@ -123,5 +136,20 @@ export const updateSettings = (updates: Partial<SiteSettings>): SiteSettings => 
   };
   
   localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedSettings));
+  
+  // Update storage service configuration if server config changed
+  if (updates.serverConfig) {
+    storageService.setConfig({
+      useServerStorage: updatedSettings.serverConfig.storageType === 'json',
+      serverUrl: updatedSettings.serverConfig.serverUrl,
+      apiKey: updatedSettings.serverConfig.apiKey,
+    });
+  }
+  
   return updatedSettings;
 };
+
+// Initialize storage on module load
+if (typeof window !== "undefined") {
+  initializeStorage();
+}
