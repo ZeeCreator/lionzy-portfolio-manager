@@ -20,8 +20,14 @@ export interface Project {
 export interface SiteSettings {
   siteName: string;
   ownerName: string;
+  displayName: string;
+  fullName: string;
+  profession: string;
+  company: string;
+  location: string;
   aboutText: string;
   contactEmail: string;
+  phoneNumber: string;
   social: {
     github?: string;
     twitter?: string;
@@ -36,6 +42,12 @@ export interface SiteSettings {
   // New education roadmap settings
   showEducationRoadmap: boolean;
   educationItems: EducationItem[];
+  // Server configuration
+  serverConfig: {
+    storageType: 'json' | 'database';
+    serverUrl: string;
+    apiKey: string;
+  };
 }
 
 export interface Skill {

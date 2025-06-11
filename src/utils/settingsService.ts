@@ -41,8 +41,14 @@ const defaultEducationItems: EducationItem[] = [
 const defaultSettings: SiteSettings = {
   siteName: "Z-PORTFOLIO",
   ownerName: "ZeroTzyID",
+  displayName: "Zero Tzy",
+  fullName: "Zero Tzy Indonesia",
+  profession: "Full Stack Developer",
+  company: "Freelancer",
+  location: "Indonesia",
   aboutText: "I'm a passionate developer specializing in creating beautiful and functional websites and applications. With a focus on user experience and clean code, I deliver high-quality digital solutions.",
   contactEmail: "zeetzy@gmail.com",
+  phoneNumber: "+62 123 456 7890",
   social: {
     github: "https://github.com/ZeeCreator",
     twitter: "https://twitter.com/",
@@ -56,6 +62,12 @@ const defaultSettings: SiteSettings = {
   },
   showEducationRoadmap: true,
   educationItems: defaultEducationItems,
+  // Server configuration
+  serverConfig: {
+    storageType: "json",
+    serverUrl: "http://localhost:3001",
+    apiKey: "",
+  },
 };
 
 // Mountain background images
@@ -82,6 +94,21 @@ export const getSettings = (): SiteSettings => {
   if (!settings.educationItems) {
     settings.educationItems = defaultEducationItems;
     settings.showEducationRoadmap = true;
+  }
+  
+  // Ensure new fields exist
+  if (!settings.displayName) settings.displayName = settings.ownerName || "Developer";
+  if (!settings.fullName) settings.fullName = settings.ownerName || "Developer";
+  if (!settings.profession) settings.profession = "Developer";
+  if (!settings.company) settings.company = "Freelancer";
+  if (!settings.location) settings.location = "Location";
+  if (!settings.phoneNumber) settings.phoneNumber = "";
+  if (!settings.serverConfig) {
+    settings.serverConfig = {
+      storageType: "json",
+      serverUrl: "http://localhost:3001",
+      apiKey: "",
+    };
   }
   
   return settings;
