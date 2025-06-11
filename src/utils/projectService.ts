@@ -52,59 +52,47 @@ const initialProjects: Project[] = [
   },
 ];
 
-// Load projects from storage
+// Load projects from server storage only
 export const getProjects = async (): Promise<Project[]> => {
   try {
+    console.log('Loading projects from server...');
     const storedProjects = await storageService.getItem(STORAGE_KEY);
     
     if (!storedProjects) {
-      await storageService.setItem(STORAGE_KEY, initialProjects);
-      return initialProjects;
+      console.log('No projects found on server, initializing with default projects...');
+      const success = await storageService.setItem(STORAGE_KEY, initialProjects);
+      if (success) {
+        return initialProjects;
+      } else {
+        console.error('Failed to initialize projects on server');
+        return [];
+      }
     }
     
     // Ensure new fields exist in existing projects
-    return storedProjects.map((project: any) => ({
+    const projects = storedProjects.map((project: any) => ({
       ...project,
       downloadType: project.downloadType || 'free',
       sourceVisible: project.sourceVisible !== undefined ? project.sourceVisible : true,
     }));
-  } catch (error) {
-    console.error('Error loading projects:', error);
-    return initialProjects;
-  }
-};
-
-// Synchronous version for components that need immediate data
-export const getProjectsSync = (): Project[] => {
-  if (typeof window === "undefined") return initialProjects;
-  
-  try {
-    const storedProjects = localStorage.getItem(STORAGE_KEY);
-    if (!storedProjects) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(initialProjects));
-      return initialProjects;
-    }
     
-    const projects = JSON.parse(storedProjects);
-    return projects.map((project: any) => ({
-      ...project,
-      downloadType: project.downloadType || 'free',
-      sourceVisible: project.sourceVisible !== undefined ? project.sourceVisible : true,
-    }));
+    console.log(`Loaded ${projects.length} projects from server`);
+    return projects;
   } catch (error) {
-    console.error('Error loading projects sync:', error);
-    return initialProjects;
+    console.error('Error loading projects from server:', error);
+    return [];
   }
 };
 
 // Get a single project by ID
-export const getProjectById = (id: string): Project | undefined => {
-  const projects = getProjectsSync();
+export const getProjectById = async (id: string): Promise<Project | undefined> => {
+  const projects = await getProjects();
   return projects.find(project => project.id === id);
 };
 
 // Create a new project
 export const createProject = async (project: Omit<Project, "id" | "createdAt" | "updatedAt">): Promise<Project> => {
+  console.log('Creating new project...');
   const projects = await getProjects();
   const newProject: Project = {
     ...project,
@@ -116,17 +104,26 @@ export const createProject = async (project: Omit<Project, "id" | "createdAt" | 
   };
   
   const updatedProjects = [...projects, newProject];
-  await storageService.setItem(STORAGE_KEY, updatedProjects);
+  const success = await storageService.setItem(STORAGE_KEY, updatedProjects);
   
-  return newProject;
+  if (success) {
+    console.log('Project created successfully:', newProject.title);
+    return newProject;
+  } else {
+    throw new Error('Failed to save project to server');
+  }
 };
 
 // Update an existing project
 export const updateProject = async (id: string, updates: Partial<Omit<Project, "id" | "createdAt" | "updatedAt">>): Promise<Project | undefined> => {
+  console.log('Updating project:', id);
   const projects = await getProjects();
   const projectIndex = projects.findIndex(p => p.id === id);
   
-  if (projectIndex === -1) return undefined;
+  if (projectIndex === -1) {
+    console.error('Project not found:', id);
+    return undefined;
+  }
   
   const updatedProject: Project = {
     ...projects[projectIndex],
@@ -135,38 +132,40 @@ export const updateProject = async (id: string, updates: Partial<Omit<Project, "
   };
   
   projects[projectIndex] = updatedProject;
-  await storageService.setItem(STORAGE_KEY, projects);
+  const success = await storageService.setItem(STORAGE_KEY, projects);
   
-  return updatedProject;
+  if (success) {
+    console.log('Project updated successfully:', updatedProject.title);
+    return updatedProject;
+  } else {
+    throw new Error('Failed to update project on server');
+  }
 };
 
 // Delete a project
 export const deleteProject = async (id: string): Promise<boolean> => {
+  console.log('Deleting project:', id);
   const projects = await getProjects();
+  const originalLength = projects.length;
   const filteredProjects = projects.filter(p => p.id !== id);
   
-  if (filteredProjects.length === projects.length) {
+  if (filteredProjects.length === originalLength) {
+    console.error('Project not found for deletion:', id);
     return false;
   }
   
-  await storageService.setItem(STORAGE_KEY, filteredProjects);
-  return true;
+  const success = await storageService.setItem(STORAGE_KEY, filteredProjects);
+  
+  if (success) {
+    console.log('Project deleted successfully');
+    return true;
+  } else {
+    throw new Error('Failed to delete project from server');
+  }
 };
 
-// Sync version for backward compatibility
-export const createProjectSync = (project: Omit<Project, "id" | "createdAt" | "updatedAt">): Project => {
-  const projects = getProjectsSync();
-  const newProject: Project = {
-    ...project,
-    id: Date.now().toString(),
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    downloadType: project.downloadType || 'free',
-    sourceVisible: project.sourceVisible !== undefined ? project.sourceVisible : true,
-  };
-  
-  const updatedProjects = [...projects, newProject];
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedProjects));
-  
-  return newProject;
+// Synchronous version for components that need immediate data (fallback only)
+export const getProjectsSync = (): Project[] => {
+  console.warn('getProjectsSync is deprecated, use getProjects() instead');
+  return [];
 };

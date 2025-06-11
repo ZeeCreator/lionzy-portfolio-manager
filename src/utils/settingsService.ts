@@ -81,8 +81,8 @@ export const availableBackgrounds = [
 ];
 
 // Initialize storage service with settings
-const initializeStorage = () => {
-  const settings = getSettings();
+const initializeStorage = async () => {
+  const settings = await getSettings();
   if (settings.serverConfig) {
     storageService.setConfig({
       useServerStorage: settings.serverConfig.storageType === 'json',
@@ -92,61 +92,84 @@ const initializeStorage = () => {
   }
 };
 
-// Get settings from localStorage or use defaults
-export const getSettings = (): SiteSettings => {
-  if (typeof window === "undefined") return defaultSettings;
-  
-  const storedSettings = localStorage.getItem(STORAGE_KEY);
-  if (!storedSettings) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultSettings));
+// Get settings from server storage
+export const getSettings = async (): Promise<SiteSettings> => {
+  try {
+    console.log('Loading settings from server...');
+    const storedSettings = await storageService.getItem(STORAGE_KEY);
+    
+    if (!storedSettings) {
+      console.log('No settings found on server, initializing with defaults...');
+      const success = await storageService.setItem(STORAGE_KEY, defaultSettings);
+      if (success) {
+        return defaultSettings;
+      } else {
+        console.error('Failed to initialize settings on server');
+        return defaultSettings;
+      }
+    }
+    
+    const settings = storedSettings;
+    // Ensure education items exist
+    if (!settings.educationItems) {
+      settings.educationItems = defaultEducationItems;
+      settings.showEducationRoadmap = true;
+    }
+    
+    // Ensure new fields exist
+    if (!settings.displayName) settings.displayName = settings.ownerName || "Developer";
+    if (!settings.fullName) settings.fullName = settings.ownerName || "Developer";
+    if (!settings.profession) settings.profession = "Developer";
+    if (!settings.company) settings.company = "Freelancer";
+    if (!settings.location) settings.location = "Location";
+    if (!settings.phoneNumber) settings.phoneNumber = "";
+    if (!settings.serverConfig) {
+      settings.serverConfig = {
+        storageType: "json",
+        serverUrl: "http://localhost:3001",
+        apiKey: "",
+      };
+    }
+    
+    console.log('Settings loaded from server successfully');
+    return settings;
+  } catch (error) {
+    console.error('Error loading settings from server:', error);
     return defaultSettings;
   }
-  
-  const settings = JSON.parse(storedSettings);
-  // Ensure education items exist
-  if (!settings.educationItems) {
-    settings.educationItems = defaultEducationItems;
-    settings.showEducationRoadmap = true;
-  }
-  
-  // Ensure new fields exist
-  if (!settings.displayName) settings.displayName = settings.ownerName || "Developer";
-  if (!settings.fullName) settings.fullName = settings.ownerName || "Developer";
-  if (!settings.profession) settings.profession = "Developer";
-  if (!settings.company) settings.company = "Freelancer";
-  if (!settings.location) settings.location = "Location";
-  if (!settings.phoneNumber) settings.phoneNumber = "";
-  if (!settings.serverConfig) {
-    settings.serverConfig = {
-      storageType: "json",
-      serverUrl: "http://localhost:3001",
-      apiKey: "",
-    };
-  }
-  
-  return settings;
+};
+
+// Synchronous version for backwards compatibility (returns defaults)
+export const getSettingsSync = (): SiteSettings => {
+  console.warn('getSettingsSync is deprecated, use getSettings() instead');
+  return defaultSettings;
 };
 
 // Update settings
-export const updateSettings = (updates: Partial<SiteSettings>): SiteSettings => {
-  const currentSettings = getSettings();
+export const updateSettings = async (updates: Partial<SiteSettings>): Promise<SiteSettings> => {
+  console.log('Updating settings...');
+  const currentSettings = await getSettings();
   const updatedSettings = {
     ...currentSettings,
     ...updates,
   };
   
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedSettings));
+  const success = await storageService.setItem(STORAGE_KEY, updatedSettings);
   
-  // Update storage service configuration if server config changed
-  if (updates.serverConfig) {
-    storageService.setConfig({
-      useServerStorage: updatedSettings.serverConfig.storageType === 'json',
-      serverUrl: updatedSettings.serverConfig.serverUrl,
-      apiKey: updatedSettings.serverConfig.apiKey,
-    });
+  if (success) {
+    console.log('Settings updated successfully');
+    // Update storage service configuration if server config changed
+    if (updates.serverConfig) {
+      storageService.setConfig({
+        useServerStorage: updatedSettings.serverConfig.storageType === 'json',
+        serverUrl: updatedSettings.serverConfig.serverUrl,
+        apiKey: updatedSettings.serverConfig.apiKey,
+      });
+    }
+    return updatedSettings;
+  } else {
+    throw new Error('Failed to update settings on server');
   }
-  
-  return updatedSettings;
 };
 
 // Initialize storage on module load

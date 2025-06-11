@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
-import { getProjectsSync } from "@/utils/projectService";
+import { getProjects } from "@/utils/projectService";
 import { getSettings } from "@/utils/settingsService";
 import { Project, SiteSettings } from "@/types";
 import { ProjectGrid } from "@/components/ui/ProjectGrid";
@@ -14,15 +14,51 @@ const Index = () => {
   const [featuredProjects, setFeaturedProjects] = useState<Project[]>([]);
   const [allProjects, setAllProjects] = useState<Project[]>([]);
   const [settings, setSettings] = useState<SiteSettings | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const projects = getProjectsSync();
-    setAllProjects(projects);
-    setFeaturedProjects(projects.filter(p => p.featured).slice(0, 3));
-    setSettings(getSettings());
+    const loadData = async () => {
+      try {
+        console.log('Loading homepage data...');
+        const [projects, siteSettings] = await Promise.all([
+          getProjects(),
+          getSettings()
+        ]);
+        
+        setAllProjects(projects);
+        setFeaturedProjects(projects.filter(p => p.featured).slice(0, 3));
+        setSettings(siteSettings);
+        console.log('Homepage data loaded successfully');
+      } catch (error) {
+        console.error('Error loading homepage data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
   }, []);
 
-  if (!settings) return null;
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="mt-2 text-muted-foreground">Memuat data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!settings) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-muted-foreground">Gagal memuat pengaturan situs</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -87,7 +123,7 @@ const Index = () => {
           {featuredProjects.length === 0 && (
             <div className="text-center py-20">
               <p className="text-muted-foreground mb-4">{t("noProjectsFound")}</p>
-              <Link to="/settings" className="btn-primary">
+              <Link to="/admin/projects/add" className="btn-primary">
                 {t("addFirstProject")}
               </Link>
             </div>

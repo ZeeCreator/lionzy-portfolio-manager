@@ -8,7 +8,7 @@ export interface StorageConfig {
 
 class StorageService {
   private config: StorageConfig = {
-    useServerStorage: false,
+    useServerStorage: true, // Default to server storage
     serverUrl: 'http://localhost:3001',
     apiKey: '',
   };
@@ -22,7 +22,6 @@ class StorageService {
       const data = JSON.stringify(value);
       
       if (this.config.useServerStorage && this.config.serverUrl) {
-        // Try server storage first
         const response = await fetch(`${this.config.serverUrl}/api/storage/${key}`, {
           method: 'POST',
           headers: {
@@ -33,32 +32,25 @@ class StorageService {
         });
         
         if (response.ok) {
-          // Also save to localStorage as backup
-          localStorage.setItem(key, data);
+          console.log(`Data saved to server for key: ${key}`);
           return true;
+        } else {
+          console.error('Server storage failed:', response.statusText);
+          return false;
         }
       }
       
-      // Fallback to localStorage
-      localStorage.setItem(key, data);
-      return true;
+      console.error('Server storage not configured');
+      return false;
     } catch (error) {
       console.error('Storage error:', error);
-      // Always try localStorage as final fallback
-      try {
-        localStorage.setItem(key, JSON.stringify(value));
-        return true;
-      } catch (localError) {
-        console.error('LocalStorage error:', localError);
-        return false;
-      }
+      return false;
     }
   }
 
   async getItem(key: string): Promise<any> {
     try {
       if (this.config.useServerStorage && this.config.serverUrl) {
-        // Try server storage first
         const response = await fetch(`${this.config.serverUrl}/api/storage/${key}`, {
           headers: {
             'Authorization': `Bearer ${this.config.apiKey}`,
@@ -67,47 +59,68 @@ class StorageService {
         
         if (response.ok) {
           const data = await response.json();
-          // Update localStorage with server data
-          localStorage.setItem(key, JSON.stringify(data));
+          console.log(`Data retrieved from server for key: ${key}`);
           return data;
+        } else if (response.status === 404) {
+          console.log(`No data found on server for key: ${key}`);
+          return null;
+        } else {
+          console.error('Server retrieval failed:', response.statusText);
+          return null;
         }
       }
       
-      // Fallback to localStorage
-      const data = localStorage.getItem(key);
-      return data ? JSON.parse(data) : null;
+      console.error('Server storage not configured');
+      return null;
     } catch (error) {
       console.error('Storage retrieval error:', error);
-      // Always try localStorage as final fallback
-      try {
-        const data = localStorage.getItem(key);
-        return data ? JSON.parse(data) : null;
-      } catch (localError) {
-        console.error('LocalStorage retrieval error:', localError);
-        return null;
-      }
+      return null;
     }
   }
 
   async removeItem(key: string): Promise<boolean> {
     try {
       if (this.config.useServerStorage && this.config.serverUrl) {
-        // Try server storage first
-        await fetch(`${this.config.serverUrl}/api/storage/${key}`, {
+        const response = await fetch(`${this.config.serverUrl}/api/storage/${key}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${this.config.apiKey}`,
           },
         });
+        
+        if (response.ok) {
+          console.log(`Data deleted from server for key: ${key}`);
+          return true;
+        } else {
+          console.error('Server deletion failed:', response.statusText);
+          return false;
+        }
       }
       
-      // Always remove from localStorage
-      localStorage.removeItem(key);
-      return true;
+      console.error('Server storage not configured');
+      return false;
     } catch (error) {
       console.error('Storage removal error:', error);
-      localStorage.removeItem(key);
-      return true;
+      return false;
+    }
+  }
+
+  // Method to check if server is available
+  async isServerAvailable(): Promise<boolean> {
+    try {
+      if (!this.config.serverUrl) return false;
+      
+      const response = await fetch(`${this.config.serverUrl}/api/health`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${this.config.apiKey}`,
+        },
+      });
+      
+      return response.ok;
+    } catch (error) {
+      console.error('Server health check failed:', error);
+      return false;
     }
   }
 }
