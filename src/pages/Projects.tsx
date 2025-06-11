@@ -21,7 +21,7 @@ const Projects = () => {
     // Load projects
     const loadProjects = async () => {
       try {
-        const projectsData = getProjects();
+        const projectsData = await getProjects();
         setProjects(projectsData);
         setFilteredProjects(projectsData);
       } catch (error) {
@@ -83,9 +83,9 @@ const Projects = () => {
     <div className="container mx-auto py-12 px-4">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold">My Projects</h1>
+          <h1 className="text-3xl font-bold">Proyek Saya</h1>
           <p className="text-muted-foreground mt-2">
-            A collection of my recent work and personal projects ({filteredProjects.length} projects)
+            Koleksi karya terbaru dan proyek personal saya ({filteredProjects.length} proyek)
           </p>
         </div>
         
@@ -93,7 +93,7 @@ const Projects = () => {
           <Button asChild>
             <Link to="/admin/projects">
               <PlusCircle className="h-4 w-4 mr-2" />
-              Manage Projects
+              Kelola Proyek
             </Link>
           </Button>
         )}
@@ -104,7 +104,7 @@ const Projects = () => {
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
-            placeholder="Search projects..."
+            placeholder="Cari proyek..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
@@ -114,7 +114,7 @@ const Projects = () => {
         {/* Tags Filter */}
         {allTags.length > 0 && (
           <div className="flex flex-wrap gap-2">
-            <span className="text-sm font-medium text-muted-foreground">Filter by tags:</span>
+            <span className="text-sm font-medium text-muted-foreground">Filter berdasarkan tag:</span>
             {allTags.map((tag) => (
               <button
                 key={tag}
@@ -133,7 +133,7 @@ const Projects = () => {
                 onClick={() => setSelectedTags([])}
                 className="px-3 py-1 rounded-full text-xs bg-destructive/10 text-destructive hover:bg-destructive/20"
               >
-                Clear filters
+                Hapus filter
               </button>
             )}
           </div>

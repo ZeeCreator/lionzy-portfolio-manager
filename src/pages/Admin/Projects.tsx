@@ -46,9 +46,13 @@ const Projects = () => {
     loadProjects();
   }, []);
 
-  const loadProjects = () => {
-    const data = getProjects();
-    setProjects(data);
+  const loadProjects = async () => {
+    try {
+      const data = await getProjects();
+      setProjects(data);
+    } catch (error) {
+      console.error("Failed to load projects:", error);
+    }
   };
 
   const handleChange = useCallback((
@@ -70,47 +74,57 @@ const Projects = () => {
     });
   }, []);
 
-  const handleEditSubmit = (e: React.FormEvent) => {
+  const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!selectedProject) return;
     
-    const updatedProject = updateProject(selectedProject.id, {
-      title: formData.title,
-      description: formData.description,
-      imageUrl: formData.imageUrl,
-      tags: formData.tags.split(",").map((tag) => tag.trim()),
-      githubUrl: formData.githubUrl || undefined,
-      liveUrl: formData.liveUrl || undefined,
-      featured: formData.featured,
-      downloadType: formData.downloadType,
-      downloadUrl: formData.downloadUrl || undefined,
-      price: formData.downloadType === 'paid' ? formData.price : undefined,
-      sourceVisible: formData.sourceVisible,
-    });
-    
-    if (updatedProject) {
-      setProjects((prev) =>
-        prev.map((p) => (p.id === updatedProject.id ? updatedProject : p))
-      );
-      toast.success("Project updated successfully!");
-      setIsEditDialogOpen(false);
-      setSelectedProject(null);
+    try {
+      const updatedProject = await updateProject(selectedProject.id, {
+        title: formData.title,
+        description: formData.description,
+        imageUrl: formData.imageUrl,
+        tags: formData.tags.split(",").map((tag) => tag.trim()),
+        githubUrl: formData.githubUrl || undefined,
+        liveUrl: formData.liveUrl || undefined,
+        featured: formData.featured,
+        downloadType: formData.downloadType,
+        downloadUrl: formData.downloadUrl || undefined,
+        price: formData.downloadType === 'paid' ? formData.price : undefined,
+        sourceVisible: formData.sourceVisible,
+      });
+      
+      if (updatedProject) {
+        setProjects((prev) =>
+          prev.map((p) => (p.id === updatedProject.id ? updatedProject : p))
+        );
+        toast.success("Proyek berhasil diperbarui!");
+        setIsEditDialogOpen(false);
+        setSelectedProject(null);
+      }
+    } catch (error) {
+      console.error("Failed to update project:", error);
+      toast.error("Gagal memperbarui proyek");
     }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!selectedProject) return;
     
-    const success = deleteProject(selectedProject.id);
-    
-    if (success) {
-      setProjects((prev) => prev.filter((p) => p.id !== selectedProject.id));
-      toast.success("Project deleted successfully!");
-      setIsDeleteDialogOpen(false);
-      setSelectedProject(null);
-    } else {
-      toast.error("Failed to delete project");
+    try {
+      const success = await deleteProject(selectedProject.id);
+      
+      if (success) {
+        setProjects((prev) => prev.filter((p) => p.id !== selectedProject.id));
+        toast.success("Proyek berhasil dihapus!");
+        setIsDeleteDialogOpen(false);
+        setSelectedProject(null);
+      } else {
+        toast.error("Gagal menghapus proyek");
+      }
+    } catch (error) {
+      console.error("Failed to delete project:", error);
+      toast.error("Gagal menghapus proyek");
     }
   };
 
@@ -141,7 +155,7 @@ const Projects = () => {
     <div className="space-y-4 py-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor={isEdit ? "edit-title" : "title"}>Title</Label>
+          <Label htmlFor={isEdit ? "edit-title" : "title"}>Judul</Label>
           <Input
             id={isEdit ? "edit-title" : "title"}
             name="title"
@@ -152,7 +166,7 @@ const Projects = () => {
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor={isEdit ? "edit-imageUrl" : "imageUrl"}>Image URL</Label>
+          <Label htmlFor={isEdit ? "edit-imageUrl" : "imageUrl"}>URL Gambar</Label>
           <Input
             id={isEdit ? "edit-imageUrl" : "imageUrl"}
             name="imageUrl"
@@ -165,7 +179,7 @@ const Projects = () => {
       </div>
       
       <div className="space-y-2">
-        <Label htmlFor={isEdit ? "edit-description" : "description"}>Description</Label>
+        <Label htmlFor={isEdit ? "edit-description" : "description"}>Deskripsi</Label>
         <Textarea
           id={isEdit ? "edit-description" : "description"}
           name="description"
@@ -177,7 +191,7 @@ const Projects = () => {
       </div>
       
       <div className="space-y-2">
-        <Label htmlFor={isEdit ? "edit-tags" : "tags"}>Tags (comma separated)</Label>
+        <Label htmlFor={isEdit ? "edit-tags" : "tags"}>Tag (pisah dengan koma)</Label>
         <Input
           id={isEdit ? "edit-tags" : "tags"}
           name="tags"
@@ -191,7 +205,7 @@ const Projects = () => {
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor={isEdit ? "edit-githubUrl" : "githubUrl"}>GitHub URL</Label>
+          <Label htmlFor={isEdit ? "edit-githubUrl" : "githubUrl"}>URL GitHub</Label>
           <Input
             id={isEdit ? "edit-githubUrl" : "githubUrl"}
             name="githubUrl"
@@ -202,7 +216,7 @@ const Projects = () => {
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor={isEdit ? "edit-liveUrl" : "liveUrl"}>Live URL</Label>
+          <Label htmlFor={isEdit ? "edit-liveUrl" : "liveUrl"}>URL Live</Label>
           <Input
             id={isEdit ? "edit-liveUrl" : "liveUrl"}
             name="liveUrl"
@@ -215,7 +229,7 @@ const Projects = () => {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor={isEdit ? "edit-downloadType" : "downloadType"}>Download Type</Label>
+        <Label htmlFor={isEdit ? "edit-downloadType" : "downloadType"}>Jenis Unduhan</Label>
         <select
           id={isEdit ? "edit-downloadType" : "downloadType"}
           name="downloadType"
@@ -223,14 +237,14 @@ const Projects = () => {
           onChange={handleChange}
           className="w-full px-3 py-2 border border-input bg-background rounded-md"
         >
-          <option value="free">Free</option>
-          <option value="paid">Paid</option>
+          <option value="free">Gratis</option>
+          <option value="paid">Berbayar</option>
         </select>
       </div>
 
       {formData.downloadType === 'free' && (
         <div className="space-y-2">
-          <Label htmlFor={isEdit ? "edit-downloadUrl" : "downloadUrl"}>Download URL</Label>
+          <Label htmlFor={isEdit ? "edit-downloadUrl" : "downloadUrl"}>URL Unduhan</Label>
           <Input
             id={isEdit ? "edit-downloadUrl" : "downloadUrl"}
             name="downloadUrl"
@@ -244,7 +258,7 @@ const Projects = () => {
 
       {formData.downloadType === 'paid' && (
         <div className="space-y-2">
-          <Label htmlFor={isEdit ? "edit-price" : "price"}>Price ($)</Label>
+          <Label htmlFor={isEdit ? "edit-price" : "price"}>Harga ($)</Label>
           <Input
             id={isEdit ? "edit-price" : "price"}
             name="price"
@@ -269,7 +283,7 @@ const Projects = () => {
             onChange={handleChange}
             className="rounded"
           />
-          <Label htmlFor={isEdit ? "edit-featured" : "featured"}>Featured Project</Label>
+          <Label htmlFor={isEdit ? "edit-featured" : "featured"}>Proyek Unggulan</Label>
         </div>
         
         <div className="flex items-center space-x-2">
@@ -281,7 +295,7 @@ const Projects = () => {
             onChange={handleChange}
             className="rounded"
           />
-          <Label htmlFor={isEdit ? "edit-sourceVisible" : "sourceVisible"}>Show Source Code</Label>
+          <Label htmlFor={isEdit ? "edit-sourceVisible" : "sourceVisible"}>Tampilkan Kode Sumber</Label>
         </div>
       </div>
     </div>
@@ -290,10 +304,10 @@ const Projects = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Projects</h1>
+        <h1 className="text-2xl font-bold">Proyek</h1>
         <Link to="/admin/projects/add" className="btn-primary">
           <Plus className="h-4 w-4 mr-2" />
-          Add Project
+          Tambah Proyek
         </Link>
       </div>
 
@@ -301,19 +315,19 @@ const Projects = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Title</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Price</TableHead>
-              <TableHead>Featured</TableHead>
-              <TableHead>Source</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead>Judul</TableHead>
+              <TableHead>Jenis</TableHead>
+              <TableHead>Harga</TableHead>
+              <TableHead>Unggulan</TableHead>
+              <TableHead>Sumber</TableHead>
+              <TableHead className="text-right">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {projects.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                  No projects found. Add your first project!
+                  Tidak ada proyek ditemukan. Tambahkan proyek pertama Anda!
                 </TableCell>
               </TableRow>
             ) : (
@@ -326,12 +340,12 @@ const Projects = () => {
                         ? 'bg-green-100 text-green-800' 
                         : 'bg-blue-100 text-blue-800'
                     }`}>
-                      {project.downloadType}
+                      {project.downloadType === 'free' ? 'Gratis' : 'Berbayar'}
                       {project.downloadType === 'paid' && project.price && ` $${project.price}`}
                     </span>
                   </TableCell>
                   <TableCell>
-                    {project.downloadType === 'paid' ? `$${project.price || 0}` : 'Free'}
+                    {project.downloadType === 'paid' ? `$${project.price || 0}` : 'Gratis'}
                   </TableCell>
                   <TableCell>
                     {project.featured ? (
@@ -372,7 +386,7 @@ const Projects = () => {
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="sm:max-w-[625px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Edit Project</DialogTitle>
+            <DialogTitle>Edit Proyek</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleEditSubmit}>
             <ProjectForm isEdit={true} />
@@ -382,10 +396,10 @@ const Projects = () => {
                 className="btn-outline"
                 onClick={() => setIsEditDialogOpen(false)}
               >
-                Cancel
+                Batal
               </button>
               <button type="submit" className="btn-primary">
-                Update Project
+                Perbarui Proyek
               </button>
             </div>
           </form>
@@ -396,11 +410,11 @@ const Projects = () => {
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Confirm Deletion</DialogTitle>
+            <DialogTitle>Konfirmasi Hapus</DialogTitle>
           </DialogHeader>
           <div className="py-4">
             <p>
-              Are you sure you want to delete the project "{selectedProject?.title}"? This action cannot be undone.
+              Apakah Anda yakin ingin menghapus proyek "{selectedProject?.title}"? Tindakan ini tidak dapat dibatalkan.
             </p>
           </div>
           <div className="flex justify-end space-x-2">
@@ -408,13 +422,13 @@ const Projects = () => {
               className="btn-outline"
               onClick={() => setIsDeleteDialogOpen(false)}
             >
-              Cancel
+              Batal
             </button>
             <button
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90 inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors"
               onClick={handleDelete}
             >
-              Delete
+              Hapus
             </button>
           </div>
         </DialogContent>

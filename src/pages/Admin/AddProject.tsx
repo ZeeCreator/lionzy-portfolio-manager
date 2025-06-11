@@ -1,8 +1,9 @@
 
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { createProject } from "@/utils/projectService";
+import { Project } from "@/types";
 import { toast } from "@/components/ui/sonner";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -27,7 +28,7 @@ const AddProject = () => {
     sourceVisible: true,
   });
 
-  const handleChange = useCallback((
+  const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value, type } = e.target as HTMLInputElement;
@@ -44,17 +45,20 @@ const AddProject = () => {
         return { ...prev, [name]: value };
       }
     });
-  }, []);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (isSubmitting) return;
+    
     setIsSubmitting(true);
     
     try {
       await createProject({
         title: formData.title,
         description: formData.description,
-        imageUrl: formData.imageUrl || "/placeholder.svg",
+        imageUrl: formData.imageUrl,
         tags: formData.tags.split(",").map((tag) => tag.trim()),
         githubUrl: formData.githubUrl || undefined,
         liveUrl: formData.liveUrl || undefined,
@@ -68,8 +72,8 @@ const AddProject = () => {
       toast.success(t("projectAddedSuccess"));
       navigate("/admin/projects");
     } catch (error) {
-      console.error('Error creating project:', error);
-      toast.error("Gagal menambahkan proyek");
+      console.error("Failed to create project:", error);
+      toast.error("Gagal membuat proyek");
     } finally {
       setIsSubmitting(false);
     }
@@ -77,9 +81,14 @@ const AddProject = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="outline" onClick={() => navigate("/admin/projects")}>
+      <div className="flex items-center space-x-4">
+        <Button
+          variant="outline"
+          onClick={() => navigate("/admin/projects")}
+          className="flex items-center space-x-2"
+        >
           <ArrowLeft className="h-4 w-4" />
+          <span>Kembali</span>
         </Button>
         <h1 className="text-2xl font-bold">{t("addProject")}</h1>
       </div>
@@ -96,7 +105,7 @@ const AddProject = () => {
                 onChange={handleChange}
                 required
                 autoComplete="off"
-                disabled={isSubmitting}
+                placeholder="Masukkan judul proyek"
               />
             </div>
             <div className="space-y-2">
@@ -108,7 +117,6 @@ const AddProject = () => {
                 onChange={handleChange}
                 placeholder="/placeholder.svg"
                 autoComplete="off"
-                disabled={isSubmitting}
               />
             </div>
           </div>
@@ -121,8 +129,8 @@ const AddProject = () => {
               value={formData.description}
               onChange={handleChange}
               required
-              rows={3}
-              disabled={isSubmitting}
+              rows={4}
+              placeholder="Deskripsi singkat tentang proyek"
             />
           </div>
           
@@ -136,7 +144,6 @@ const AddProject = () => {
               placeholder="React, TypeScript, Tailwind"
               required
               autoComplete="off"
-              disabled={isSubmitting}
             />
           </div>
           
@@ -150,7 +157,6 @@ const AddProject = () => {
                 onChange={handleChange}
                 placeholder="https://github.com/..."
                 autoComplete="off"
-                disabled={isSubmitting}
               />
             </div>
             <div className="space-y-2">
@@ -162,7 +168,6 @@ const AddProject = () => {
                 onChange={handleChange}
                 placeholder="https://..."
                 autoComplete="off"
-                disabled={isSubmitting}
               />
             </div>
           </div>
@@ -174,7 +179,6 @@ const AddProject = () => {
               name="downloadType"
               value={formData.downloadType}
               onChange={handleChange}
-              disabled={isSubmitting}
               className="w-full px-3 py-2 border border-input bg-background rounded-md"
             >
               <option value="free">{t("free")}</option>
@@ -192,7 +196,6 @@ const AddProject = () => {
                 onChange={handleChange}
                 placeholder="https://github.com/user/repo/archive/main.zip"
                 autoComplete="off"
-                disabled={isSubmitting}
               />
             </div>
           )}
@@ -210,12 +213,11 @@ const AddProject = () => {
                 onChange={handleChange}
                 placeholder="29.99"
                 autoComplete="off"
-                disabled={isSubmitting}
               />
             </div>
           )}
           
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-6">
             <div className="flex items-center space-x-2">
               <input
                 id="featured"
@@ -223,7 +225,6 @@ const AddProject = () => {
                 type="checkbox"
                 checked={formData.featured}
                 onChange={handleChange}
-                disabled={isSubmitting}
                 className="rounded"
               />
               <Label htmlFor="featured">{t("featured")}</Label>
@@ -236,24 +237,26 @@ const AddProject = () => {
                 type="checkbox"
                 checked={formData.sourceVisible}
                 onChange={handleChange}
-                disabled={isSubmitting}
                 className="rounded"
               />
               <Label htmlFor="sourceVisible">{t("sourceVisible")}</Label>
             </div>
           </div>
-
-          <div className="flex justify-end space-x-2">
+          
+          <div className="flex justify-end space-x-4 pt-6">
             <Button
               type="button"
               variant="outline"
               onClick={() => navigate("/admin/projects")}
-              disabled={isSubmitting}
             >
               {t("cancel")}
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? t("loading") : t("addProject")}
+            <Button 
+              type="submit" 
+              disabled={isSubmitting}
+              className="min-w-[120px]"
+            >
+              {isSubmitting ? "Menyimpan..." : t("save")}
             </Button>
           </div>
         </form>
