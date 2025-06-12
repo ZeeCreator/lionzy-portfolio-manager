@@ -15,9 +15,12 @@ const About = () => {
   const { isLoggedIn } = useUser();
 
   useEffect(() => {
-    // Load settings and skills
-    setSettings(getSettings());
-    setSkills(getSkills());
+    const loadData = async () => {
+      const settingsData = await getSettings();
+      setSettings(settingsData);
+      setSkills(getSkills());
+    };
+    loadData();
   }, []);
 
   if (!settings) {

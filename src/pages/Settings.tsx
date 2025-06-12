@@ -39,10 +39,10 @@ const Settings = () => {
     loadConfig();
   }, []);
 
-  const loadConfig = () => {
+  const loadConfig = async () => {
     try {
       const appConfig = getAppConfig();
-      const settings = getSettings();
+      const settings = await getSettings();
       setConfig(appConfig);
       setSiteSettings(settings);
     } catch (error) {
@@ -76,11 +76,11 @@ const Settings = () => {
     }
   };
 
-  const handleSiteSettingsUpdate = (updates: Partial<SiteSettings>) => {
+  const handleSiteSettingsUpdate = async (updates: Partial<SiteSettings>) => {
     if (!siteSettings) return;
 
     try {
-      const updatedSettings = updateSettings(updates);
+      const updatedSettings = await updateSettings(updates);
       setSiteSettings(updatedSettings);
       toast.success("Pengaturan berhasil diperbarui");
     } catch (error) {

@@ -9,7 +9,11 @@ export default function Footer() {
   const [settings, setSettings] = useState<SiteSettings | null>(null);
 
   useEffect(() => {
-    setSettings(getSettings());
+    const loadSettings = async () => {
+      const settingsData = await getSettings();
+      setSettings(settingsData);
+    };
+    loadSettings();
   }, []);
 
   if (!settings) return null;

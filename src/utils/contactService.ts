@@ -11,7 +11,7 @@ const mockServerStorage = {
   // Simulate server API calls
   async saveToServer(messages: ContactMessage[]): Promise<boolean> {
     try {
-      const settings = getSettings();
+      const settings = await getSettings();
       
       if (settings.serverConfig.storageType === 'json') {
         // Simulate API call to server
@@ -41,7 +41,7 @@ const mockServerStorage = {
   
   async loadFromServer(): Promise<ContactMessage[]> {
     try {
-      const settings = getSettings();
+      const settings = await getSettings();
       
       if (settings.serverConfig.storageType === 'json') {
         // Simulate API call to server

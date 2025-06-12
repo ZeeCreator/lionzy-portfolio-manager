@@ -24,8 +24,11 @@ const Contact = () => {
   const { isLoggedIn } = useUser();
 
   useEffect(() => {
-    // Load settings
-    setSettings(getSettings());
+    const loadSettings = async () => {
+      const settingsData = await getSettings();
+      setSettings(settingsData);
+    };
+    loadSettings();
   }, []);
 
   const handleChange = (

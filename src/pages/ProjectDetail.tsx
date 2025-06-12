@@ -15,14 +15,19 @@ const ProjectDetail = () => {
   const { isLoggedIn } = useUser();
 
   useEffect(() => {
-    if (id) {
-      // Load project
-      const projectData = getProjectById(id);
-      if (projectData) {
-        setProject(projectData);
+    const loadProject = async () => {
+      if (id) {
+        try {
+          const projectData = await getProjectById(id);
+          setProject(projectData || null);
+        } catch (error) {
+          console.error('Error loading project:', error);
+          setProject(null);
+        }
+        setLoading(false);
       }
-      setLoading(false);
-    }
+    };
+    loadProject();
   }, [id]);
 
   const handleDownload = () => {
