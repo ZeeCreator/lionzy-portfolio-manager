@@ -38,6 +38,234 @@ export type Database = {
         }
         Relationships: []
       }
+      contact_messages: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          message: string
+          name: string
+          read: boolean | null
+          subject: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: string
+          message: string
+          name: string
+          read?: boolean | null
+          subject: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          message?: string
+          name?: string
+          read?: boolean | null
+          subject?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      education_items: {
+        Row: {
+          category: string
+          completed: boolean | null
+          created_at: string | null
+          description: string
+          id: string
+          progress: number
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          category: string
+          completed?: boolean | null
+          created_at?: string | null
+          description: string
+          id?: string
+          progress: number
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string
+          completed?: boolean | null
+          created_at?: string | null
+          description?: string
+          id?: string
+          progress?: number
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      projects: {
+        Row: {
+          created_at: string | null
+          description: string
+          download_type: string | null
+          download_url: string | null
+          featured: boolean | null
+          github_url: string | null
+          id: string
+          image_url: string
+          live_url: string | null
+          price: number | null
+          source_visible: boolean | null
+          tags: string[] | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description: string
+          download_type?: string | null
+          download_url?: string | null
+          featured?: boolean | null
+          github_url?: string | null
+          id?: string
+          image_url: string
+          live_url?: string | null
+          price?: number | null
+          source_visible?: boolean | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string
+          download_type?: string | null
+          download_url?: string | null
+          featured?: boolean | null
+          github_url?: string | null
+          id?: string
+          image_url?: string
+          live_url?: string | null
+          price?: number | null
+          source_visible?: boolean | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      site_settings: {
+        Row: {
+          about_text: string
+          background_image: string | null
+          company: string
+          contact_email: string
+          created_at: string | null
+          display_name: string
+          full_name: string
+          id: string
+          location: string
+          owner_name: string
+          phone_number: string | null
+          profession: string
+          saweria_url: string | null
+          saweria_username: string | null
+          server_config_api_key: string | null
+          server_config_server_url: string | null
+          server_config_storage_type: string | null
+          show_education_roadmap: boolean | null
+          site_name: string
+          social_github: string | null
+          social_instagram: string | null
+          social_linkedin: string | null
+          social_twitter: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          about_text: string
+          background_image?: string | null
+          company: string
+          contact_email: string
+          created_at?: string | null
+          display_name: string
+          full_name: string
+          id?: string
+          location: string
+          owner_name: string
+          phone_number?: string | null
+          profession: string
+          saweria_url?: string | null
+          saweria_username?: string | null
+          server_config_api_key?: string | null
+          server_config_server_url?: string | null
+          server_config_storage_type?: string | null
+          show_education_roadmap?: boolean | null
+          site_name: string
+          social_github?: string | null
+          social_instagram?: string | null
+          social_linkedin?: string | null
+          social_twitter?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          about_text?: string
+          background_image?: string | null
+          company?: string
+          contact_email?: string
+          created_at?: string | null
+          display_name?: string
+          full_name?: string
+          id?: string
+          location?: string
+          owner_name?: string
+          phone_number?: string | null
+          profession?: string
+          saweria_url?: string | null
+          saweria_username?: string | null
+          server_config_api_key?: string | null
+          server_config_server_url?: string | null
+          server_config_storage_type?: string | null
+          show_education_roadmap?: boolean | null
+          site_name?: string
+          social_github?: string | null
+          social_instagram?: string | null
+          social_linkedin?: string | null
+          social_twitter?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      skills: {
+        Row: {
+          category: string
+          created_at: string | null
+          icon: string
+          id: string
+          level: number
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          icon: string
+          id?: string
+          level: number
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          icon?: string
+          id?: string
+          level?: number
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
