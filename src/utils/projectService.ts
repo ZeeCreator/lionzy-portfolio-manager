@@ -1,166 +1,156 @@
 
 import { Project } from "@/types";
-import { storageService } from "./storageService";
+import { supabase } from "@/integrations/supabase/client";
 
-const STORAGE_KEY = "lionzy_projects";
+// Transform database row to Project interface
+const transformToProject = (row: any): Project => ({
+  id: row.id,
+  title: row.title,
+  description: row.description,
+  imageUrl: row.image_url,
+  tags: row.tags || [],
+  createdAt: row.created_at,
+  updatedAt: row.updated_at,
+  githubUrl: row.github_url,
+  liveUrl: row.live_url,
+  featured: row.featured,
+  downloadType: row.download_type,
+  downloadUrl: row.download_url,
+  price: row.price,
+  sourceVisible: row.source_visible,
+});
 
-// Seed data for initial projects
-const initialProjects: Project[] = [
-  {
-    id: "1",
-    title: "Website Portfolio",
-    description: "Website portfolio modern yang dibuat dengan React dan Tailwind CSS.",
-    imageUrl: "/placeholder.svg",
-    tags: ["React", "Tailwind CSS", "TypeScript"],
-    createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date().toISOString(),
-    githubUrl: "https://github.com/",
-    liveUrl: "https://example.com",
-    featured: true,
-    downloadType: 'free',
-    downloadUrl: "https://github.com/user/repo/archive/main.zip",
-    sourceVisible: true,
-  },
-  {
-    id: "2",
-    title: "Dashboard E-commerce",
-    description: "Dashboard admin untuk mengelola inventori dan pesanan toko e-commerce.",
-    imageUrl: "/placeholder.svg",
-    tags: ["React", "Redux", "Material UI"],
-    createdAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date().toISOString(),
-    githubUrl: "https://github.com/",
-    featured: false,
-    downloadType: 'paid',
-    price: 29.99,
-    sourceVisible: false,
-  },
-  {
-    id: "3",
-    title: "Aplikasi Cuaca",
-    description: "Aplikasi cuaca yang indah dengan prakiraan 7 hari.",
-    imageUrl: "/placeholder.svg",
-    tags: ["React", "Weather API", "Styled Components"],
-    createdAt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date().toISOString(),
-    githubUrl: "https://github.com/",
-    liveUrl: "https://example.com",
-    featured: true,
-    downloadType: 'free',
-    downloadUrl: "https://github.com/user/weather-app/archive/main.zip",
-    sourceVisible: true,
-  },
-];
+// Transform Project interface to database row
+const transformToRow = (project: Partial<Project>) => ({
+  title: project.title,
+  description: project.description,
+  image_url: project.imageUrl,
+  tags: project.tags,
+  github_url: project.githubUrl,
+  live_url: project.liveUrl,
+  featured: project.featured,
+  download_type: project.downloadType,
+  download_url: project.downloadUrl,
+  price: project.price,
+  source_visible: project.sourceVisible,
+});
 
-// Load projects from server storage only
+// Load projects from Supabase
 export const getProjects = async (): Promise<Project[]> => {
   try {
-    console.log('Loading projects from server...');
-    const storedProjects = await storageService.getItem(STORAGE_KEY);
+    console.log('Loading projects from Supabase...');
     
-    if (!storedProjects) {
-      console.log('No projects found on server, initializing with default projects...');
-      const success = await storageService.setItem(STORAGE_KEY, initialProjects);
-      if (success) {
-        return initialProjects;
-      } else {
-        console.error('Failed to initialize projects on server');
-        return [];
-      }
+    const { data, error } = await supabase
+      .from('projects')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('Error loading projects:', error);
+      return [];
     }
     
-    // Ensure new fields exist in existing projects
-    const projects = storedProjects.map((project: any) => ({
-      ...project,
-      downloadType: project.downloadType || 'free',
-      sourceVisible: project.sourceVisible !== undefined ? project.sourceVisible : true,
-    }));
-    
-    console.log(`Loaded ${projects.length} projects from server`);
+    const projects = data?.map(transformToProject) || [];
+    console.log(`Loaded ${projects.length} projects from Supabase`);
     return projects;
   } catch (error) {
-    console.error('Error loading projects from server:', error);
+    console.error('Error loading projects from Supabase:', error);
     return [];
   }
 };
 
 // Get a single project by ID
 export const getProjectById = async (id: string): Promise<Project | undefined> => {
-  const projects = await getProjects();
-  return projects.find(project => project.id === id);
+  try {
+    const { data, error } = await supabase
+      .from('projects')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (error) {
+      console.error('Error loading project:', error);
+      return undefined;
+    }
+    
+    return data ? transformToProject(data) : undefined;
+  } catch (error) {
+    console.error('Error loading project from Supabase:', error);
+    return undefined;
+  }
 };
 
 // Create a new project
 export const createProject = async (project: Omit<Project, "id" | "createdAt" | "updatedAt">): Promise<Project> => {
-  console.log('Creating new project...');
-  const projects = await getProjects();
-  const newProject: Project = {
-    ...project,
-    id: Date.now().toString(),
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    downloadType: project.downloadType || 'free',
-    sourceVisible: project.sourceVisible !== undefined ? project.sourceVisible : true,
-  };
-  
-  const updatedProjects = [...projects, newProject];
-  const success = await storageService.setItem(STORAGE_KEY, updatedProjects);
-  
-  if (success) {
+  try {
+    console.log('Creating new project...');
+    
+    const { data, error } = await supabase
+      .from('projects')
+      .insert([transformToRow(project)])
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error creating project:', error);
+      throw new Error('Failed to create project');
+    }
+    
+    const newProject = transformToProject(data);
     console.log('Project created successfully:', newProject.title);
     return newProject;
-  } else {
-    throw new Error('Failed to save project to server');
+  } catch (error) {
+    console.error('Error creating project in Supabase:', error);
+    throw error;
   }
 };
 
 // Update an existing project
 export const updateProject = async (id: string, updates: Partial<Omit<Project, "id" | "createdAt" | "updatedAt">>): Promise<Project | undefined> => {
-  console.log('Updating project:', id);
-  const projects = await getProjects();
-  const projectIndex = projects.findIndex(p => p.id === id);
-  
-  if (projectIndex === -1) {
-    console.error('Project not found:', id);
-    return undefined;
-  }
-  
-  const updatedProject: Project = {
-    ...projects[projectIndex],
-    ...updates,
-    updatedAt: new Date().toISOString(),
-  };
-  
-  projects[projectIndex] = updatedProject;
-  const success = await storageService.setItem(STORAGE_KEY, projects);
-  
-  if (success) {
+  try {
+    console.log('Updating project:', id);
+    
+    const { data, error } = await supabase
+      .from('projects')
+      .update(transformToRow(updates))
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error updating project:', error);
+      return undefined;
+    }
+    
+    const updatedProject = transformToProject(data);
     console.log('Project updated successfully:', updatedProject.title);
     return updatedProject;
-  } else {
-    throw new Error('Failed to update project on server');
+  } catch (error) {
+    console.error('Error updating project in Supabase:', error);
+    return undefined;
   }
 };
 
 // Delete a project
 export const deleteProject = async (id: string): Promise<boolean> => {
-  console.log('Deleting project:', id);
-  const projects = await getProjects();
-  const originalLength = projects.length;
-  const filteredProjects = projects.filter(p => p.id !== id);
-  
-  if (filteredProjects.length === originalLength) {
-    console.error('Project not found for deletion:', id);
-    return false;
-  }
-  
-  const success = await storageService.setItem(STORAGE_KEY, filteredProjects);
-  
-  if (success) {
+  try {
+    console.log('Deleting project:', id);
+    
+    const { error } = await supabase
+      .from('projects')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      console.error('Error deleting project:', error);
+      return false;
+    }
+    
     console.log('Project deleted successfully');
     return true;
-  } else {
-    throw new Error('Failed to delete project from server');
+  } catch (error) {
+    console.error('Error deleting project from Supabase:', error);
+    return false;
   }
 };
 

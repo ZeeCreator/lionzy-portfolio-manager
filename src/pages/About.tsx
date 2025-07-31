@@ -18,7 +18,8 @@ const About = () => {
     const loadData = async () => {
       const settingsData = await getSettings();
       setSettings(settingsData);
-      setSkills(getSkills());
+      const skillsData = await getSkills();
+      setSkills(skillsData);
     };
     loadData();
   }, []);

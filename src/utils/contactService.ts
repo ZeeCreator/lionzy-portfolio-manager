@@ -1,156 +1,168 @@
 
 import { ContactMessage } from "@/types";
-import { getSettings } from "./settingsService";
+import { supabase } from "@/integrations/supabase/client";
 
-const STORAGE_KEY = "lionzy_messages";
+// Transform database row to ContactMessage interface
+const transformToContactMessage = (row: any): ContactMessage => ({
+  id: row.id,
+  name: row.name,
+  email: row.email,
+  subject: row.subject,
+  message: row.message,
+  read: row.read,
+  createdAt: row.created_at,
+});
 
-// Mock server-like JSON storage
-const mockServerStorage = {
-  data: [] as ContactMessage[],
-  
-  // Simulate server API calls
-  async saveToServer(messages: ContactMessage[]): Promise<boolean> {
-    try {
-      const settings = await getSettings();
-      
-      if (settings.serverConfig.storageType === 'json') {
-        // Simulate API call to server
-        console.log(`Saving to server: ${settings.serverConfig.serverUrl}/api/messages`);
-        console.log('Messages:', messages);
-        
-        // For now, we'll still use localStorage but structure it like server data
-        const serverData = {
-          timestamp: new Date().toISOString(),
-          messages: messages,
-          metadata: {
-            total: messages.length,
-            unread: messages.filter(m => !m.read).length,
-          }
-        };
-        
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(serverData));
-        return true;
-      }
-      
-      return false;
-    } catch (error) {
-      console.error('Failed to save to server:', error);
-      return false;
-    }
-  },
-  
-  async loadFromServer(): Promise<ContactMessage[]> {
-    try {
-      const settings = await getSettings();
-      
-      if (settings.serverConfig.storageType === 'json') {
-        // Simulate API call to server
-        console.log(`Loading from server: ${settings.serverConfig.serverUrl}/api/messages`);
-        
-        const storedData = localStorage.getItem(STORAGE_KEY);
-        if (!storedData) {
-          const initialData = {
-            timestamp: new Date().toISOString(),
-            messages: [],
-            metadata: { total: 0, unread: 0 }
-          };
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(initialData));
-          return [];
-        }
-        
-        const serverData = JSON.parse(storedData);
-        return serverData.messages || [];
-      }
-      
-      return [];
-    } catch (error) {
-      console.error('Failed to load from server:', error);
-      return [];
-    }
-  }
-};
-
-// Get all contact messages from server
-export const getContactMessages = (): ContactMessage[] => {
-  // For now, we'll use sync loading but in real implementation this would be async
-  const storedData = localStorage.getItem(STORAGE_KEY);
-  if (!storedData) {
-    return [];
-  }
-  
+// Get all contact messages from Supabase
+export const getContactMessages = async (): Promise<ContactMessage[]> => {
   try {
-    const serverData = JSON.parse(storedData);
-    return serverData.messages || [];
+    console.log('Loading contact messages from Supabase...');
+    
+    const { data, error } = await supabase
+      .from('contact_messages')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('Error loading contact messages:', error);
+      return [];
+    }
+    
+    const messages = data?.map(transformToContactMessage) || [];
+    console.log(`Loaded ${messages.length} contact messages from Supabase`);
+    return messages;
   } catch (error) {
-    console.error('Failed to parse server data:', error);
+    console.error('Error loading contact messages from Supabase:', error);
     return [];
   }
 };
 
 // Get a single contact message by ID
-export const getContactMessageById = (id: string): ContactMessage | undefined => {
-  const messages = getContactMessages();
-  return messages.find(message => message.id === id);
+export const getContactMessageById = async (id: string): Promise<ContactMessage | undefined> => {
+  try {
+    const { data, error } = await supabase
+      .from('contact_messages')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (error) {
+      console.error('Error loading contact message:', error);
+      return undefined;
+    }
+    
+    return data ? transformToContactMessage(data) : undefined;
+  } catch (error) {
+    console.error('Error loading contact message from Supabase:', error);
+    return undefined;
+  }
 };
 
 // Create a new contact message
-export const createContactMessage = (message: Omit<ContactMessage, "id" | "createdAt" | "read">): ContactMessage => {
-  const messages = getContactMessages();
-  const newMessage: ContactMessage = {
-    ...message,
-    id: Date.now().toString(),
-    createdAt: new Date().toISOString(),
-    read: false,
-  };
-  
-  const updatedMessages = [...messages, newMessage];
-  
-  // Save to server-like storage
-  mockServerStorage.saveToServer(updatedMessages);
-  
-  return newMessage;
+export const createContactMessage = async (message: Omit<ContactMessage, "id" | "createdAt" | "read">): Promise<ContactMessage> => {
+  try {
+    console.log('Creating new contact message...');
+    
+    const { data, error } = await supabase
+      .from('contact_messages')
+      .insert([{
+        name: message.name,
+        email: message.email,
+        subject: message.subject,
+        message: message.message,
+        read: false,
+      }])
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error creating contact message:', error);
+      throw new Error('Failed to create contact message');
+    }
+    
+    const newMessage = transformToContactMessage(data);
+    console.log('Contact message created successfully');
+    return newMessage;
+  } catch (error) {
+    console.error('Error creating contact message in Supabase:', error);
+    throw error;
+  }
 };
 
 // Update an existing contact message
-export const updateContactMessage = (id: string, updates: Partial<Omit<ContactMessage, "id" | "createdAt">>): ContactMessage | undefined => {
-  const messages = getContactMessages();
-  const messageIndex = messages.findIndex(m => m.id === id);
-  
-  if (messageIndex === -1) return undefined;
-  
-  const updatedMessage: ContactMessage = {
-    ...messages[messageIndex],
-    ...updates,
-  };
-  
-  messages[messageIndex] = updatedMessage;
-  
-  // Save to server-like storage
-  mockServerStorage.saveToServer(messages);
-  
-  return updatedMessage;
+export const updateContactMessage = async (id: string, updates: Partial<Omit<ContactMessage, "id" | "createdAt">>): Promise<ContactMessage | undefined> => {
+  try {
+    console.log('Updating contact message:', id);
+    
+    const { data, error } = await supabase
+      .from('contact_messages')
+      .update({
+        name: updates.name,
+        email: updates.email,
+        subject: updates.subject,
+        message: updates.message,
+        read: updates.read,
+      })
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error updating contact message:', error);
+      return undefined;
+    }
+    
+    const updatedMessage = transformToContactMessage(data);
+    console.log('Contact message updated successfully');
+    return updatedMessage;
+  } catch (error) {
+    console.error('Error updating contact message in Supabase:', error);
+    return undefined;
+  }
 };
 
 // Delete a contact message
-export const deleteContactMessage = (id: string): boolean => {
-  const messages = getContactMessages();
-  const filteredMessages = messages.filter(m => m.id !== id);
-  
-  if (filteredMessages.length === messages.length) {
+export const deleteContactMessage = async (id: string): Promise<boolean> => {
+  try {
+    console.log('Deleting contact message:', id);
+    
+    const { error } = await supabase
+      .from('contact_messages')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      console.error('Error deleting contact message:', error);
+      return false;
+    }
+    
+    console.log('Contact message deleted successfully');
+    return true;
+  } catch (error) {
+    console.error('Error deleting contact message from Supabase:', error);
     return false;
   }
-  
-  // Save to server-like storage
-  mockServerStorage.saveToServer(filteredMessages);
-  return true;
 };
 
 // Get message statistics
-export const getMessageStats = () => {
-  const messages = getContactMessages();
-  return {
-    total: messages.length,
-    unread: messages.filter(m => !m.read).length,
-    read: messages.filter(m => m.read).length,
-  };
+export const getMessageStats = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('contact_messages')
+      .select('read');
+    
+    if (error) {
+      console.error('Error getting message stats:', error);
+      return { total: 0, unread: 0, read: 0 };
+    }
+    
+    const total = data?.length || 0;
+    const unread = data?.filter(m => !m.read).length || 0;
+    const read = total - unread;
+    
+    return { total, unread, read };
+  } catch (error) {
+    console.error('Error getting message stats from Supabase:', error);
+    return { total: 0, unread: 0, read: 0 };
+  }
 };

@@ -35,13 +35,13 @@ const Messages = () => {
     loadMessages();
   }, []);
 
-  const loadMessages = () => {
-    const data = getContactMessages();
+  const loadMessages = async () => {
+    const data = await getContactMessages();
     setMessages(data);
   };
 
-  const handleMarkAsRead = (id: string, isRead: boolean) => {
-    const updatedMessage = updateContactMessage(id, { read: isRead });
+  const handleMarkAsRead = async (id: string, isRead: boolean) => {
+    const updatedMessage = await updateContactMessage(id, { read: isRead });
     
     if (updatedMessage) {
       setMessages((prev) =>
@@ -51,10 +51,10 @@ const Messages = () => {
     }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!selectedMessage) return;
     
-    const success = deleteContactMessage(selectedMessage.id);
+    const success = await deleteContactMessage(selectedMessage.id);
     
     if (success) {
       setMessages((prev) => prev.filter((m) => m.id !== selectedMessage.id));

@@ -38,8 +38,8 @@ const Skills = () => {
     loadSkills();
   }, []);
 
-  const loadSkills = () => {
-    const data = getSkills();
+  const loadSkills = async () => {
+    const data = await getSkills();
     setSkills(data);
   };
 
@@ -67,10 +67,10 @@ const Skills = () => {
     }
   };
 
-  const handleAddSubmit = (e: React.FormEvent) => {
+  const handleAddSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const newSkill = createSkill({
+    const newSkill = await createSkill({
       name: formData.name,
       level: formData.level,
       category: formData.category,
@@ -83,12 +83,12 @@ const Skills = () => {
     resetForm();
   };
 
-  const handleEditSubmit = (e: React.FormEvent) => {
+  const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!selectedSkill) return;
     
-    const updatedSkill = updateSkill(selectedSkill.id, {
+    const updatedSkill = await updateSkill(selectedSkill.id, {
       name: formData.name,
       level: formData.level,
       category: formData.category,
@@ -105,10 +105,10 @@ const Skills = () => {
     }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!selectedSkill) return;
     
-    const success = deleteSkill(selectedSkill.id);
+    const success = await deleteSkill(selectedSkill.id);
     
     if (success) {
       setSkills((prev) => prev.filter((s) => s.id !== selectedSkill.id));
