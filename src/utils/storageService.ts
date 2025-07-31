@@ -1,47 +1,27 @@
 
-// Centralized storage service for cross-device data persistence
-export interface StorageConfig {
-  useServerStorage: boolean;
-  serverUrl?: string;
-  apiKey?: string;
-}
+import { supabase } from '@/lib/supabase';
 
+// Centralized storage service using Supabase for cross-device data persistence
 class StorageService {
-  private config: StorageConfig = {
-    useServerStorage: true, // Default to server storage
-    serverUrl: 'http://localhost:3001',
-    apiKey: '',
-  };
-
-  setConfig(config: Partial<StorageConfig>) {
-    this.config = { ...this.config, ...config };
-  }
-
   async setItem(key: string, value: any): Promise<boolean> {
     try {
-      const data = JSON.stringify(value);
+      console.log(`Saving data to Supabase for key: ${key}`);
       
-      if (this.config.useServerStorage && this.config.serverUrl) {
-        const response = await fetch(`${this.config.serverUrl}/api/storage/${key}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${this.config.apiKey}`,
-          },
-          body: data,
+      const { error } = await supabase
+        .from('app_storage')
+        .upsert({ 
+          key, 
+          value: JSON.stringify(value),
+          updated_at: new Date().toISOString()
         });
-        
-        if (response.ok) {
-          console.log(`Data saved to server for key: ${key}`);
-          return true;
-        } else {
-          console.error('Server storage failed:', response.statusText);
-          return false;
-        }
+      
+      if (error) {
+        console.error('Supabase storage error:', error);
+        return false;
       }
       
-      console.error('Server storage not configured');
-      return false;
+      console.log(`Data saved to Supabase for key: ${key}`);
+      return true;
     } catch (error) {
       console.error('Storage error:', error);
       return false;
@@ -50,27 +30,29 @@ class StorageService {
 
   async getItem(key: string): Promise<any> {
     try {
-      if (this.config.useServerStorage && this.config.serverUrl) {
-        const response = await fetch(`${this.config.serverUrl}/api/storage/${key}`, {
-          headers: {
-            'Authorization': `Bearer ${this.config.apiKey}`,
-          },
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          console.log(`Data retrieved from server for key: ${key}`);
-          return data;
-        } else if (response.status === 404) {
-          console.log(`No data found on server for key: ${key}`);
-          return null;
-        } else {
-          console.error('Server retrieval failed:', response.statusText);
+      console.log(`Loading data from Supabase for key: ${key}`);
+      
+      const { data, error } = await supabase
+        .from('app_storage')
+        .select('value')
+        .eq('key', key)
+        .single();
+      
+      if (error) {
+        if (error.code === 'PGRST116') {
+          console.log(`No data found in Supabase for key: ${key}`);
           return null;
         }
+        console.error('Supabase retrieval error:', error);
+        return null;
       }
       
-      console.error('Server storage not configured');
+      if (data?.value) {
+        const parsedValue = JSON.parse(data.value);
+        console.log(`Data retrieved from Supabase for key: ${key}`);
+        return parsedValue;
+      }
+      
       return null;
     } catch (error) {
       console.error('Storage retrieval error:', error);
@@ -80,46 +62,36 @@ class StorageService {
 
   async removeItem(key: string): Promise<boolean> {
     try {
-      if (this.config.useServerStorage && this.config.serverUrl) {
-        const response = await fetch(`${this.config.serverUrl}/api/storage/${key}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${this.config.apiKey}`,
-          },
-        });
-        
-        if (response.ok) {
-          console.log(`Data deleted from server for key: ${key}`);
-          return true;
-        } else {
-          console.error('Server deletion failed:', response.statusText);
-          return false;
-        }
+      console.log(`Deleting data from Supabase for key: ${key}`);
+      
+      const { error } = await supabase
+        .from('app_storage')
+        .delete()
+        .eq('key', key);
+      
+      if (error) {
+        console.error('Supabase deletion error:', error);
+        return false;
       }
       
-      console.error('Server storage not configured');
-      return false;
+      console.log(`Data deleted from Supabase for key: ${key}`);
+      return true;
     } catch (error) {
       console.error('Storage removal error:', error);
       return false;
     }
   }
 
-  // Method to check if server is available
+  // Method to check if Supabase is available
   async isServerAvailable(): Promise<boolean> {
     try {
-      if (!this.config.serverUrl) return false;
+      const { error } = await supabase
+        .from('app_storage')
+        .select('count', { count: 'exact', head: true });
       
-      const response = await fetch(`${this.config.serverUrl}/api/health`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${this.config.apiKey}`,
-        },
-      });
-      
-      return response.ok;
+      return !error;
     } catch (error) {
-      console.error('Server health check failed:', error);
+      console.error('Supabase health check failed:', error);
       return false;
     }
   }

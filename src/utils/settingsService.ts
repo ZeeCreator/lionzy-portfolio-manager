@@ -82,14 +82,8 @@ export const availableBackgrounds = [
 
 // Initialize storage service with settings
 const initializeStorage = async () => {
-  const settings = await getSettings();
-  if (settings.serverConfig) {
-    storageService.setConfig({
-      useServerStorage: settings.serverConfig.storageType === 'json',
-      serverUrl: settings.serverConfig.serverUrl,
-      apiKey: settings.serverConfig.apiKey,
-    });
-  }
+  // Supabase storage is always ready, no configuration needed
+  console.log('Storage service initialized with Supabase');
 };
 
 // Get settings from server storage
@@ -158,14 +152,6 @@ export const updateSettings = async (updates: Partial<SiteSettings>): Promise<Si
   
   if (success) {
     console.log('Settings updated successfully');
-    // Update storage service configuration if server config changed
-    if (updates.serverConfig) {
-      storageService.setConfig({
-        useServerStorage: updatedSettings.serverConfig.storageType === 'json',
-        serverUrl: updatedSettings.serverConfig.serverUrl,
-        apiKey: updatedSettings.serverConfig.apiKey,
-      });
-    }
     return updatedSettings;
   } else {
     throw new Error('Failed to update settings on server');
