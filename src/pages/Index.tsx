@@ -9,12 +9,14 @@ import { ProjectGrid } from "@/components/ui/ProjectGrid";
 import { TypingAnimation } from "@/components/ui/TypingAnimation";
 import { EducationRoadmap } from "@/components/EducationRoadmap";
 import { t } from "@/utils/translations";
+import { useUser } from "@/contexts/UserContext";
 
 const Index = () => {
   const [featuredProjects, setFeaturedProjects] = useState<Project[]>([]);
   const [allProjects, setAllProjects] = useState<Project[]>([]);
   const [settings, setSettings] = useState<SiteSettings | null>(null);
   const [loading, setLoading] = useState(true);
+  const { isLoggedIn } = useUser();
 
   useEffect(() => {
     const loadData = async () => {
@@ -123,9 +125,11 @@ const Index = () => {
           {featuredProjects.length === 0 && (
             <div className="text-center py-20">
               <p className="text-muted-foreground mb-4">{t("noProjectsFound")}</p>
-              <Link to="/admin/projects/add" className="btn-primary">
-                {t("addFirstProject")}
-              </Link>
+              {isLoggedIn && (
+                <Link to="/admin/projects/add" className="btn-primary">
+                  {t("addFirstProject")}
+                </Link>
+              )}
             </div>
           )}
         </div>

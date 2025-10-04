@@ -67,7 +67,11 @@ export const getProjectById = async (id: string): Promise<Project | undefined> =
 // Create a new project
 export const createProject = async (project: Omit<Project, "id" | "createdAt" | "updatedAt">): Promise<Project> => {
   try {
-    console.log('Creating new project...');
+    console.log('Creating new project...', project);
+    
+    if (!database) {
+      throw new Error('Firebase database is not initialized');
+    }
     
     const projectsRef = ref(database, 'projects');
     const newProjectRef = push(projectsRef);
@@ -79,6 +83,7 @@ export const createProject = async (project: Omit<Project, "id" | "createdAt" | 
       updatedAt: now,
     };
     
+    console.log('Saving to Firebase with key:', newProjectRef.key);
     await set(newProjectRef, newProject);
     
     const createdProject = transformToProject(newProjectRef.key!, newProject);
