@@ -1,6 +1,6 @@
-
 import { SiteSettings, EducationItem } from "@/types";
-import { supabase } from "@/integrations/supabase/client";
+import { database } from "@/lib/firebase";
+import { ref, get, set, update } from "firebase/database";
 
 const defaultEducationItems: EducationItem[] = [
   {
@@ -77,135 +77,26 @@ export const availableBackgrounds = [
   { id: "mountain-5.jpg", name: "Sunset Pegunungan" },
 ];
 
-// Transform database row to SiteSettings interface
-const transformToSiteSettings = (row: any, educationItems: EducationItem[]): SiteSettings => ({
-  siteName: row.site_name,
-  ownerName: row.owner_name,
-  displayName: row.display_name,
-  fullName: row.full_name,
-  profession: row.profession,
-  company: row.company,
-  location: row.location,
-  aboutText: row.about_text,
-  contactEmail: row.contact_email,
-  phoneNumber: row.phone_number,
-  social: {
-    github: row.social_github,
-    twitter: row.social_twitter,
-    linkedin: row.social_linkedin,
-    instagram: row.social_instagram,
-  },
-  backgroundImage: row.background_image,
-  saweria: {
-    username: row.saweria_username,
-    url: row.saweria_url,
-  },
-  showEducationRoadmap: row.show_education_roadmap,
-  educationItems: educationItems,
-  serverConfig: {
-    storageType: row.server_config_storage_type || 'database',
-    serverUrl: row.server_config_server_url || '',
-    apiKey: row.server_config_api_key || '',
-  },
-});
-
-// Transform EducationItem to database row
-const transformEducationItemToRow = (item: EducationItem) => ({
-  id: item.id,
-  title: item.title,
-  description: item.description,
-  progress: item.progress,
-  category: item.category,
-  completed: item.completed,
-});
-
-// Transform database row to EducationItem
-const transformToEducationItem = (row: any): EducationItem => ({
-  id: row.id,
-  title: row.title,
-  description: row.description,
-  progress: row.progress,
-  category: row.category,
-  completed: row.completed,
-});
-
-// Get settings from Supabase
+// Get settings from Firebase
 export const getSettings = async (): Promise<SiteSettings> => {
   try {
-    console.log('Loading settings from Supabase...');
+    console.log('Loading settings from Firebase...');
     
-    // Load settings
-    const { data: settingsData, error: settingsError } = await supabase
-      .from('site_settings')
-      .select('*')
-      .limit(1)
-      .single();
+    const settingsRef = ref(database, 'site_settings');
+    const snapshot = await get(settingsRef);
     
-    // Load education items
-    const { data: educationData, error: educationError } = await supabase
-      .from('education_items')
-      .select('*')
-      .order('created_at', { ascending: true });
-    
-    if (settingsError && settingsError.code !== 'PGRST116') {
-      console.error('Error loading settings:', settingsError);
-    }
-    
-    if (educationError) {
-      console.error('Error loading education items:', educationError);
-    }
-    
-    const educationItems = educationData?.map(transformToEducationItem) || defaultEducationItems;
-    
-    if (!settingsData) {
+    if (!snapshot.exists()) {
       console.log('No settings found, initializing with defaults...');
-      // Initialize with default settings
-      const { data: newSettingsData, error: createError } = await supabase
-        .from('site_settings')
-        .insert([{
-          site_name: defaultSettings.siteName,
-          owner_name: defaultSettings.ownerName,
-          display_name: defaultSettings.displayName,
-          full_name: defaultSettings.fullName,
-          profession: defaultSettings.profession,
-          company: defaultSettings.company,
-          location: defaultSettings.location,
-          about_text: defaultSettings.aboutText,
-          contact_email: defaultSettings.contactEmail,
-          phone_number: defaultSettings.phoneNumber,
-          social_github: defaultSettings.social.github,
-          social_twitter: defaultSettings.social.twitter,
-          social_linkedin: defaultSettings.social.linkedin,
-          social_instagram: defaultSettings.social.instagram,
-          background_image: defaultSettings.backgroundImage,
-          saweria_username: defaultSettings.saweria.username,
-          saweria_url: defaultSettings.saweria.url,
-          show_education_roadmap: defaultSettings.showEducationRoadmap,
-        }])
-        .select()
-        .single();
-      
-      if (createError) {
-        console.error('Error creating default settings:', createError);
-        return { ...defaultSettings, educationItems };
-      }
-      
-      // Initialize education items if needed
-      if (educationItems.length === 0) {
-        await supabase
-          .from('education_items')
-          .insert(defaultEducationItems.map(transformEducationItemToRow));
-      }
-      
-      console.log('Settings initialized successfully');
-      return transformToSiteSettings(newSettingsData, educationItems.length > 0 ? educationItems : defaultEducationItems);
+      await set(settingsRef, defaultSettings);
+      return defaultSettings;
     }
     
-    console.log('Settings loaded from Supabase successfully');
-    return transformToSiteSettings(settingsData, educationItems);
+    const settings = snapshot.val();
+    console.log('Settings loaded from Firebase successfully');
+    return settings;
   } catch (error) {
-    console.error('Error loading settings from Supabase:', error);
-    return { ...defaultSettings, educationItems: defaultEducationItems };
+    console.error('Error loading settings from Firebase:', error);
+    return defaultSettings;
   }
 };
 
@@ -220,70 +111,36 @@ export const updateSettings = async (updates: Partial<SiteSettings>): Promise<Si
   try {
     console.log('Updating settings...');
     
-    // Update site settings
-    const { data: settingsData, error: settingsError } = await supabase
-      .from('site_settings')
-      .update({
-        site_name: updates.siteName,
-        owner_name: updates.ownerName,
-        display_name: updates.displayName,
-        full_name: updates.fullName,
-        profession: updates.profession,
-        company: updates.company,
-        location: updates.location,
-        about_text: updates.aboutText,
-        contact_email: updates.contactEmail,
-        phone_number: updates.phoneNumber,
-        social_github: updates.social?.github,
-        social_twitter: updates.social?.twitter,
-        social_linkedin: updates.social?.linkedin,
-        social_instagram: updates.social?.instagram,
-        background_image: updates.backgroundImage,
-        saweria_username: updates.saweria?.username,
-        saweria_url: updates.saweria?.url,
-        show_education_roadmap: updates.showEducationRoadmap,
-        server_config_storage_type: updates.serverConfig?.storageType,
-        server_config_server_url: updates.serverConfig?.serverUrl,
-        server_config_api_key: updates.serverConfig?.apiKey,
-      })
-      .select()
-      .single();
+    const settingsRef = ref(database, 'site_settings');
     
-    if (settingsError) {
-      console.error('Error updating settings:', settingsError);
-      throw new Error('Failed to update settings');
-    }
+    // Get current settings
+    const snapshot = await get(settingsRef);
+    const currentSettings = snapshot.exists() ? snapshot.val() : defaultSettings;
     
-    // Handle education items updates if provided
-    let educationItems: EducationItem[] = [];
-    if (updates.educationItems) {
-      // Delete existing education items and insert new ones
-      await supabase.from('education_items').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-      
-      const { data: educationData, error: educationError } = await supabase
-        .from('education_items')
-        .insert(updates.educationItems.map(transformEducationItemToRow))
-        .select();
-      
-      if (educationError) {
-        console.error('Error updating education items:', educationError);
-      } else {
-        educationItems = educationData?.map(transformToEducationItem) || [];
-      }
-    } else {
-      // Load existing education items
-      const { data: educationData } = await supabase
-        .from('education_items')
-        .select('*')
-        .order('created_at', { ascending: true });
-      
-      educationItems = educationData?.map(transformToEducationItem) || [];
-    }
+    // Merge updates with current settings
+    const updatedSettings = {
+      ...currentSettings,
+      ...updates,
+      social: {
+        ...currentSettings.social,
+        ...updates.social,
+      },
+      saweria: {
+        ...currentSettings.saweria,
+        ...updates.saweria,
+      },
+      serverConfig: {
+        ...currentSettings.serverConfig,
+        ...updates.serverConfig,
+      },
+    };
+    
+    await set(settingsRef, updatedSettings);
     
     console.log('Settings updated successfully');
-    return transformToSiteSettings(settingsData, educationItems);
+    return updatedSettings;
   } catch (error) {
-    console.error('Error updating settings in Supabase:', error);
+    console.error('Error updating settings in Firebase:', error);
     throw error;
   }
 };

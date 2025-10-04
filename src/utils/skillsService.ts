@@ -1,36 +1,38 @@
-
 import { Skill } from "@/types";
-import { supabase } from "@/integrations/supabase/client";
+import { database } from "@/lib/firebase";
+import { ref, get, set, update, remove, push } from "firebase/database";
 
-// Transform database row to Skill interface
-const transformToSkill = (row: any): Skill => ({
-  id: row.id,
-  name: row.name,
-  level: row.level,
-  category: row.category,
-  icon: row.icon,
+// Transform database value to Skill interface
+const transformToSkill = (id: string, data: any): Skill => ({
+  id,
+  name: data.name,
+  level: data.level,
+  category: data.category,
+  icon: data.icon,
 });
 
 // Get all skills
 export const getSkills = async (): Promise<Skill[]> => {
   try {
-    console.log('Loading skills from Supabase...');
+    console.log('Loading skills from Firebase...');
     
-    const { data, error } = await supabase
-      .from('skills')
-      .select('*')
-      .order('category', { ascending: true });
+    const skillsRef = ref(database, 'skills');
+    const snapshot = await get(skillsRef);
     
-    if (error) {
-      console.error('Error loading skills:', error);
+    if (!snapshot.exists()) {
+      console.log('No skills found');
       return [];
     }
     
-    const skills = data?.map(transformToSkill) || [];
-    console.log(`Loaded ${skills.length} skills from Supabase`);
+    const skillsData = snapshot.val();
+    const skills = Object.entries(skillsData).map(([id, data]) => 
+      transformToSkill(id, data)
+    ).sort((a, b) => a.category.localeCompare(b.category));
+    
+    console.log(`Loaded ${skills.length} skills from Firebase`);
     return skills;
   } catch (error) {
-    console.error('Error loading skills from Supabase:', error);
+    console.error('Error loading skills from Firebase:', error);
     return [];
   }
 };
@@ -38,20 +40,17 @@ export const getSkills = async (): Promise<Skill[]> => {
 // Get a skill by ID
 export const getSkillById = async (id: string): Promise<Skill | undefined> => {
   try {
-    const { data, error } = await supabase
-      .from('skills')
-      .select('*')
-      .eq('id', id)
-      .single();
+    const skillRef = ref(database, `skills/${id}`);
+    const snapshot = await get(skillRef);
     
-    if (error) {
-      console.error('Error loading skill:', error);
+    if (!snapshot.exists()) {
+      console.log('Skill not found');
       return undefined;
     }
     
-    return data ? transformToSkill(data) : undefined;
+    return transformToSkill(id, snapshot.val());
   } catch (error) {
-    console.error('Error loading skill from Supabase:', error);
+    console.error('Error loading skill from Firebase:', error);
     return undefined;
   }
 };
@@ -61,27 +60,16 @@ export const createSkill = async (skill: Omit<Skill, "id">): Promise<Skill> => {
   try {
     console.log('Creating new skill...');
     
-    const { data, error } = await supabase
-      .from('skills')
-      .insert([{
-        name: skill.name,
-        level: skill.level,
-        category: skill.category,
-        icon: skill.icon,
-      }])
-      .select()
-      .single();
+    const skillsRef = ref(database, 'skills');
+    const newSkillRef = push(skillsRef);
     
-    if (error) {
-      console.error('Error creating skill:', error);
-      throw new Error('Failed to create skill');
-    }
+    await set(newSkillRef, skill);
     
-    const newSkill = transformToSkill(data);
+    const newSkill = transformToSkill(newSkillRef.key!, skill);
     console.log('Skill created successfully:', newSkill.name);
     return newSkill;
   } catch (error) {
-    console.error('Error creating skill in Supabase:', error);
+    console.error('Error creating skill in Firebase:', error);
     throw error;
   }
 };
@@ -91,28 +79,19 @@ export const updateSkill = async (id: string, updates: Partial<Omit<Skill, "id">
   try {
     console.log('Updating skill:', id);
     
-    const { data, error } = await supabase
-      .from('skills')
-      .update({
-        name: updates.name,
-        level: updates.level,
-        category: updates.category,
-        icon: updates.icon,
-      })
-      .eq('id', id)
-      .select()
-      .single();
+    const skillRef = ref(database, `skills/${id}`);
+    await update(skillRef, updates);
     
-    if (error) {
-      console.error('Error updating skill:', error);
+    const snapshot = await get(skillRef);
+    if (!snapshot.exists()) {
       return undefined;
     }
     
-    const updatedSkill = transformToSkill(data);
+    const updatedSkill = transformToSkill(id, snapshot.val());
     console.log('Skill updated successfully:', updatedSkill.name);
     return updatedSkill;
   } catch (error) {
-    console.error('Error updating skill in Supabase:', error);
+    console.error('Error updating skill in Firebase:', error);
     return undefined;
   }
 };
@@ -122,20 +101,13 @@ export const deleteSkill = async (id: string): Promise<boolean> => {
   try {
     console.log('Deleting skill:', id);
     
-    const { error } = await supabase
-      .from('skills')
-      .delete()
-      .eq('id', id);
-    
-    if (error) {
-      console.error('Error deleting skill:', error);
-      return false;
-    }
+    const skillRef = ref(database, `skills/${id}`);
+    await remove(skillRef);
     
     console.log('Skill deleted successfully');
     return true;
   } catch (error) {
-    console.error('Error deleting skill from Supabase:', error);
+    console.error('Error deleting skill from Firebase:', error);
     return false;
   }
 };

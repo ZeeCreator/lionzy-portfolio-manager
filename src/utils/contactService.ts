@@ -1,38 +1,40 @@
-
 import { ContactMessage } from "@/types";
-import { supabase } from "@/integrations/supabase/client";
+import { database } from "@/lib/firebase";
+import { ref, get, set, update, remove, push } from "firebase/database";
 
-// Transform database row to ContactMessage interface
-const transformToContactMessage = (row: any): ContactMessage => ({
-  id: row.id,
-  name: row.name,
-  email: row.email,
-  subject: row.subject,
-  message: row.message,
-  read: row.read,
-  createdAt: row.created_at,
+// Transform database value to ContactMessage interface
+const transformToContactMessage = (id: string, data: any): ContactMessage => ({
+  id,
+  name: data.name,
+  email: data.email,
+  subject: data.subject,
+  message: data.message,
+  read: data.read,
+  createdAt: data.createdAt,
 });
 
-// Get all contact messages from Supabase
+// Get all contact messages from Firebase
 export const getContactMessages = async (): Promise<ContactMessage[]> => {
   try {
-    console.log('Loading contact messages from Supabase...');
+    console.log('Loading contact messages from Firebase...');
     
-    const { data, error } = await supabase
-      .from('contact_messages')
-      .select('*')
-      .order('created_at', { ascending: false });
+    const messagesRef = ref(database, 'contact_messages');
+    const snapshot = await get(messagesRef);
     
-    if (error) {
-      console.error('Error loading contact messages:', error);
+    if (!snapshot.exists()) {
+      console.log('No contact messages found');
       return [];
     }
     
-    const messages = data?.map(transformToContactMessage) || [];
-    console.log(`Loaded ${messages.length} contact messages from Supabase`);
+    const messagesData = snapshot.val();
+    const messages = Object.entries(messagesData).map(([id, data]) => 
+      transformToContactMessage(id, data)
+    ).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    
+    console.log(`Loaded ${messages.length} contact messages from Firebase`);
     return messages;
   } catch (error) {
-    console.error('Error loading contact messages from Supabase:', error);
+    console.error('Error loading contact messages from Firebase:', error);
     return [];
   }
 };
@@ -40,20 +42,17 @@ export const getContactMessages = async (): Promise<ContactMessage[]> => {
 // Get a single contact message by ID
 export const getContactMessageById = async (id: string): Promise<ContactMessage | undefined> => {
   try {
-    const { data, error } = await supabase
-      .from('contact_messages')
-      .select('*')
-      .eq('id', id)
-      .single();
+    const messageRef = ref(database, `contact_messages/${id}`);
+    const snapshot = await get(messageRef);
     
-    if (error) {
-      console.error('Error loading contact message:', error);
+    if (!snapshot.exists()) {
+      console.log('Contact message not found');
       return undefined;
     }
     
-    return data ? transformToContactMessage(data) : undefined;
+    return transformToContactMessage(id, snapshot.val());
   } catch (error) {
-    console.error('Error loading contact message from Supabase:', error);
+    console.error('Error loading contact message from Firebase:', error);
     return undefined;
   }
 };
@@ -63,28 +62,22 @@ export const createContactMessage = async (message: Omit<ContactMessage, "id" | 
   try {
     console.log('Creating new contact message...');
     
-    const { data, error } = await supabase
-      .from('contact_messages')
-      .insert([{
-        name: message.name,
-        email: message.email,
-        subject: message.subject,
-        message: message.message,
-        read: false,
-      }])
-      .select()
-      .single();
+    const messagesRef = ref(database, 'contact_messages');
+    const newMessageRef = push(messagesRef);
     
-    if (error) {
-      console.error('Error creating contact message:', error);
-      throw new Error('Failed to create contact message');
-    }
+    const newMessage = {
+      ...message,
+      read: false,
+      createdAt: new Date().toISOString(),
+    };
     
-    const newMessage = transformToContactMessage(data);
+    await set(newMessageRef, newMessage);
+    
+    const createdMessage = transformToContactMessage(newMessageRef.key!, newMessage);
     console.log('Contact message created successfully');
-    return newMessage;
+    return createdMessage;
   } catch (error) {
-    console.error('Error creating contact message in Supabase:', error);
+    console.error('Error creating contact message in Firebase:', error);
     throw error;
   }
 };
@@ -94,29 +87,19 @@ export const updateContactMessage = async (id: string, updates: Partial<Omit<Con
   try {
     console.log('Updating contact message:', id);
     
-    const { data, error } = await supabase
-      .from('contact_messages')
-      .update({
-        name: updates.name,
-        email: updates.email,
-        subject: updates.subject,
-        message: updates.message,
-        read: updates.read,
-      })
-      .eq('id', id)
-      .select()
-      .single();
+    const messageRef = ref(database, `contact_messages/${id}`);
+    await update(messageRef, updates);
     
-    if (error) {
-      console.error('Error updating contact message:', error);
+    const snapshot = await get(messageRef);
+    if (!snapshot.exists()) {
       return undefined;
     }
     
-    const updatedMessage = transformToContactMessage(data);
+    const updatedMessage = transformToContactMessage(id, snapshot.val());
     console.log('Contact message updated successfully');
     return updatedMessage;
   } catch (error) {
-    console.error('Error updating contact message in Supabase:', error);
+    console.error('Error updating contact message in Firebase:', error);
     return undefined;
   }
 };
@@ -126,20 +109,13 @@ export const deleteContactMessage = async (id: string): Promise<boolean> => {
   try {
     console.log('Deleting contact message:', id);
     
-    const { error } = await supabase
-      .from('contact_messages')
-      .delete()
-      .eq('id', id);
-    
-    if (error) {
-      console.error('Error deleting contact message:', error);
-      return false;
-    }
+    const messageRef = ref(database, `contact_messages/${id}`);
+    await remove(messageRef);
     
     console.log('Contact message deleted successfully');
     return true;
   } catch (error) {
-    console.error('Error deleting contact message from Supabase:', error);
+    console.error('Error deleting contact message from Firebase:', error);
     return false;
   }
 };
@@ -147,22 +123,23 @@ export const deleteContactMessage = async (id: string): Promise<boolean> => {
 // Get message statistics
 export const getMessageStats = async () => {
   try {
-    const { data, error } = await supabase
-      .from('contact_messages')
-      .select('read');
+    const messagesRef = ref(database, 'contact_messages');
+    const snapshot = await get(messagesRef);
     
-    if (error) {
-      console.error('Error getting message stats:', error);
+    if (!snapshot.exists()) {
       return { total: 0, unread: 0, read: 0 };
     }
     
-    const total = data?.length || 0;
-    const unread = data?.filter(m => !m.read).length || 0;
+    const messagesData = snapshot.val();
+    const messages = Object.values(messagesData) as any[];
+    
+    const total = messages.length;
+    const unread = messages.filter(m => !m.read).length;
     const read = total - unread;
     
     return { total, unread, read };
   } catch (error) {
-    console.error('Error getting message stats from Supabase:', error);
+    console.error('Error getting message stats from Firebase:', error);
     return { total: 0, unread: 0, read: 0 };
   }
 };
