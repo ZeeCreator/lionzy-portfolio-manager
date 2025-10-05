@@ -88,7 +88,8 @@ export const updateContactMessage = async (id: string, updates: Partial<Omit<Con
     console.log('Updating contact message:', id);
     
     const messageRef = ref(database, `contact_messages/${id}`);
-    await update(messageRef, updates);
+    const sanitized = JSON.parse(JSON.stringify(updates));
+    await update(messageRef, sanitized);
     
     const snapshot = await get(messageRef);
     if (!snapshot.exists()) {

@@ -63,7 +63,8 @@ export const createSkill = async (skill: Omit<Skill, "id">): Promise<Skill> => {
     const skillsRef = ref(database, 'skills');
     const newSkillRef = push(skillsRef);
     
-    await set(newSkillRef, skill);
+    const sanitized = JSON.parse(JSON.stringify(skill));
+    await set(newSkillRef, sanitized);
     
     const newSkill = transformToSkill(newSkillRef.key!, skill);
     console.log('Skill created successfully:', newSkill.name);
@@ -80,7 +81,8 @@ export const updateSkill = async (id: string, updates: Partial<Omit<Skill, "id">
     console.log('Updating skill:', id);
     
     const skillRef = ref(database, `skills/${id}`);
-    await update(skillRef, updates);
+    const sanitized = JSON.parse(JSON.stringify(updates));
+    await update(skillRef, sanitized);
     
     const snapshot = await get(skillRef);
     if (!snapshot.exists()) {

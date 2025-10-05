@@ -83,8 +83,10 @@ export const createProject = async (project: Omit<Project, "id" | "createdAt" | 
       updatedAt: now,
     };
     
+    // Remove undefined values to satisfy Firebase RTDB constraints
+    const sanitized = JSON.parse(JSON.stringify(newProject));
     console.log('Saving to Firebase with key:', newProjectRef.key);
-    await set(newProjectRef, newProject);
+    await set(newProjectRef, sanitized);
     
     const createdProject = transformToProject(newProjectRef.key!, newProject);
     console.log('Project created successfully:', createdProject.title);
@@ -106,7 +108,9 @@ export const updateProject = async (id: string, updates: Partial<Omit<Project, "
       updatedAt: new Date().toISOString(),
     };
     
-    await update(projectRef, updatedData);
+    // Remove undefined values before updating
+    const sanitized = JSON.parse(JSON.stringify(updatedData));
+    await update(projectRef, sanitized);
     
     const snapshot = await get(projectRef);
     if (!snapshot.exists()) {
